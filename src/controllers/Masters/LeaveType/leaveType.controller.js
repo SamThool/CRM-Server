@@ -1,8 +1,12 @@
+const { default: mongoose } = require("mongoose");
 const { leaveTypeModel } = require("../../../models/index");
 
 const getLeaveTypeController = async (req, res) => {
   try {
-    const leaveTypes = await leaveTypeModel.find()
+    const { companyId } = req.query;
+    const leaveTypes = await leaveTypeModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+    });
     if (!leaveTypes || leaveTypes.length === 0) {
       return res
         .status(404)
@@ -25,6 +29,7 @@ const getLeaveTypeController = async (req, res) => {
 
 const postLeaveTypeController = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const { leaveType, shortForm, totalLeaves, leavesPerMonth } = req.body;
 
     if (!leaveType || !shortForm || !totalLeaves || !leavesPerMonth) {
@@ -37,6 +42,7 @@ const postLeaveTypeController = async (req, res) => {
 
     const newLeaveType = new leaveTypeModel({
       leaveType,
+      companyId,
       shortForm,
       totalLeaves,
       leavesPerMonth,

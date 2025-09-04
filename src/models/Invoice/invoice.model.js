@@ -10,11 +10,16 @@ const ProductSchema = new mongoose.Schema({
 
 const InvoiceSchema = new mongoose.Schema({
   // Client details
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+    required: true,
+  },
   gstType: { type: String, required: true },
-  clientId:{type:String,required:true},
+  clientId: { type: String, required: true },
   clientName: { type: String, required: true },
-  invoiceNumber: { type: String, required: true},
-  RecieptNo:{type:String,required:true},
+  invoiceNumber: { type: String, required: true },
+  RecieptNo: { type: String, required: true },
   date: { type: Date, required: true },
   clientGst: { type: String },
   clientEmail: { type: String, required: true },
@@ -28,7 +33,7 @@ const InvoiceSchema = new mongoose.Schema({
   products: {
     type: [ProductSchema],
     required: true,
-    validate: v => Array.isArray(v) && v.length > 0,
+    validate: (v) => Array.isArray(v) && v.length > 0,
   },
 
   // Invoice summary
@@ -48,16 +53,16 @@ const InvoiceSchema = new mongoose.Schema({
   sgstAmount: { type: Number },
 
   // Bank details
-  selectedBankId:{ type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
-  status:{type:String,default:'unpaid'},
+  selectedBankId: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
+  status: { type: String, default: "unpaid" },
   paymentDetails: {
     transactionId: { type: String },
     paymentMode: { type: String },
     paidAmount: { type: String },
     paymentBankName: { type: String },
     paymentDate: { type: String },
-    invoiceId: { type: String }
-  }
+    invoiceId: { type: String },
+  },
 });
 
 const InvoiceModel = mongoose.model("Invoice", InvoiceSchema);

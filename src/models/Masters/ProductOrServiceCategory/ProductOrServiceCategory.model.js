@@ -3,10 +3,15 @@ const Schema = mongoose.Schema;
 
 const ProductOrServiceCategorySchema = new Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
+    },
     productName: { type: String, required: true },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Admin", 
+      ref: "Admin",
       required: true,
     },
   },

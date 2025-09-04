@@ -1,9 +1,10 @@
+const { default: mongoose } = require("mongoose");
 const SubProductCategoryModel = require("../../../models/Masters/SubProductCategory/SubProductCategory.model");
 
 const getSubProductCategoryController = async (req, res) => {
   try {
     const Id = req.user.adminId || req.user.staffId; // From middleware
-
+    const { companyId } = req.query;
     if (!Id) {
       return res
         .status(401)
@@ -13,7 +14,7 @@ const getSubProductCategoryController = async (req, res) => {
     console.log("Admin ID from token:", Id);
 
     const subCategories = await SubProductCategoryModel.find({
-      createdBy: Id,
+      companyId: new mongoose.Types.ObjectId(companyId),
     }).sort({ createdAt: -1 }); // Descending
 
     if (!subCategories || subCategories.length === 0) {
@@ -42,7 +43,7 @@ const postSubProductCategoryController = async (req, res) => {
   try {
     const { productName, subProductName } = req.body;
     const Id = req.user.adminId || req.user.staffId;
-
+    const { companyId } = req.query;
     if (!productName || !subProductName) {
       return res.status(400).json({
         status: "false",
@@ -52,6 +53,7 @@ const postSubProductCategoryController = async (req, res) => {
 
     const newSubCategory = new SubProductCategoryModel({
       productName,
+      companyId,
       subProductName,
       createdBy: Id,
     });
@@ -81,7 +83,6 @@ const putSubProductCategoryController = async (req, res) => {
       });
     }
 
-   
     const updatedSubCategory = await SubProductCategoryModel.findOneAndUpdate(
       { _id: id, createdBy: Id }, // ✅ proper filter
       updateData,

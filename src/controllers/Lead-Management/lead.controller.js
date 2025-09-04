@@ -1,80 +1,12 @@
 const mongoose = require("mongoose");
 const { leadModel } = require("../../models/index");
 const { prospectModel } = require("../../models/index");
-const {contactModel} = require("../../models/index");
+const { contactModel } = require("../../models/index");
 const { leadReferenceModel } = require("../../models/index");
 const { ProductOrServiceCategorymodel } = require("../../models/index");
 const { leadStatusModel } = require("../../models/index");
 const { leadTypeModel } = require("../../models/index");
 
-// const createLeadController = async (req, res) => {
-//   try {
-//     const {
-//       Prospect,
-//       firstName,
-//       middleName,
-//       lastName,
-//       gender,
-//       countryCode,
-//       phoneNo,
-//       altPhoneNo,
-//       email,
-//       altEmail,
-//       notes,
-//       address,
-//       pincode,
-//       city,
-//       state,
-//       country,
-//       reference,
-//       productService,
-//       status,
-//       leadType,
-//       projectValue,
-//       assignTo,
-//       contact, // array of contact objects
-//       followups // optional array of followups
-//     } = req.body;
-
-//     const newLead = new leadModel({
-//       Prospect: new mongoose.Types.ObjectId(Prospect),
-//       firstName,
-//       middleName,
-//       lastName,
-//       gender,
-//       countryCode,
-//       phoneNo,
-//       altPhoneNo,
-//       email,
-//       altEmail,
-//       notes,
-//       address,
-//       pincode,
-//       city,
-//       state,
-//       country,
-//       reference: new mongoose.Types.ObjectId(reference),
-//       productService: new mongoose.Types.ObjectId(productService),
-//       status: new mongoose.Types.ObjectId(status),
-//       leadType: new mongoose.Types.ObjectId(leadType),
-//       projectValue,
-//       assignTo: new mongoose.Types.ObjectId(assignTo),
-//       contact, // directly store array of objects
-//       followups, // if present
-//     });
-
-//     const savedLead = await newLead.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Lead created successfully",
-//       data: savedLead,
-//     });
-//   } catch (error) {
-//     console.error("Create Lead Error:", error);
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// };
 const createLeadController = async (req, res) => {
   try {
     // Sanitize reference fields
@@ -85,10 +17,12 @@ const createLeadController = async (req, res) => {
       "productService",
       "leadstatus",
       "leadType",
-      "assignTo"
+      "assignTo",
     ].forEach((key) => {
       if (!req.body[key] || req.body[key] === "") req.body[key] = undefined;
     });
+
+    const { companyId } = req.query;
 
     // Destructure fields, including newCompanyName for newLead case
     let {
@@ -119,33 +53,58 @@ const createLeadController = async (req, res) => {
       contact = [],
       followups = [],
       leadCategory,
-      companyName
+      companyName,
     } = req.body;
 
     // Validation: required fields
     const requiredFields = [
-      "firstName", "lastName", "gender", "countryCode", "phoneNo", "email",
-      "address", "pincode", "city", "state", "country", "reference",
-      "productService", "leadstatus", "leadType", "assignTo", "projectValue"
+      "firstName",
+      "lastName",
+      "gender",
+      "countryCode",
+      "phoneNo",
+      "email",
+      "address",
+      "pincode",
+      "city",
+      "state",
+      "country",
+      "reference",
+      "productService",
+      "leadstatus",
+      "leadType",
+      "assignTo",
+      "projectValue",
     ];
 
     if (leadCategory === "newLead") {
       if (!newCompanyName || newCompanyName.trim() === "") {
-        return res.status(400).json({ success: false, error: "newCompanyName is required for new leads." });
+        return res.status(400).json({
+          success: false,
+          error: "newCompanyName is required for new leads.",
+        });
       }
     } else if (leadCategory === "prospect") {
       if (!Prospect) {
-        return res.status(400).json({ success: false, error: "Prospect is required for prospect leads." });
+        return res.status(400).json({
+          success: false,
+          error: "Prospect is required for prospect leads.",
+        });
       }
     } else if (leadCategory === "client") {
       if (!Client) {
-        return res.status(400).json({ success: false, error: "Client is required for client leads." });
+        return res.status(400).json({
+          success: false,
+          error: "Client is required for client leads.",
+        });
       }
     }
 
     for (let field of requiredFields) {
       if (!req.body[field]) {
-        return res.status(400).json({ success: false, error: `${field} is required.` });
+        return res
+          .status(400)
+          .json({ success: false, error: `${field} is required.` });
       }
     }
 
@@ -160,6 +119,7 @@ const createLeadController = async (req, res) => {
       lastName,
       gender,
       countryCode,
+      companyId,
       phoneNo,
       altPhoneNo,
       email,
@@ -178,7 +138,7 @@ const createLeadController = async (req, res) => {
       assignTo,
       contact,
       followups,
-      leadCategory
+      leadCategory,
     };
 
     const newLead = new leadModel(leadData);
@@ -197,8 +157,9 @@ const createLeadController = async (req, res) => {
 
 const getLeadController = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const leads = await leadModel
-      .find()
+      .find({ companyId: new mongoose.Types.ObjectId(companyId) })
       .populate("Prospect", "companyName")
       .populate("Client")
       .populate("reference", "LeadReference")
@@ -209,7 +170,6 @@ const getLeadController = async (req, res) => {
         "assignTo",
         "basicDetails.firstName basicDetails.lastName basicDetails.email"
       );
-    console.log('lead is',leads);
     res.status(200).json({
       success: true,
       total: leads.length,
@@ -237,7 +197,9 @@ const getLeadControllerById = async (req, res) => {
       );
 
     if (!lead) {
-      return res.status(404).json({ success: false, message: "Lead not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Lead not found" });
     }
 
     res.status(200).json({
@@ -369,17 +331,17 @@ const createFollowUpController = async (req, res) => {
 // Get all follow-ups for all leads (flattened)
 const getFollowUpController = async (req, res) => {
   try {
-    const leads = await leadModel.find({}, 'followups');
-    const allFollowups = leads.flatMap(lead =>
-      (lead.followups || []).map(f => ({
+    const leads = await leadModel.find({}, "followups");
+    const allFollowups = leads.flatMap((lead) =>
+      (lead.followups || []).map((f) => ({
         ...f.toObject(),
-        leadId: lead._id
+        leadId: lead._id,
       }))
     );
     res.status(200).json({ success: true, data: allFollowups });
   } catch (err) {
-    console.error('Error fetching follow-ups:', err);
-    res.status(500).json({ message: 'Failed to fetch follow-ups' });
+    console.error("Error fetching follow-ups:", err);
+    res.status(500).json({ message: "Failed to fetch follow-ups" });
   }
 };
 
@@ -404,11 +366,12 @@ const updateFollowUpController = async (req, res) => {
   const { followupDate, followupTime, leadstatus, comment } = req.body;
 
   try {
-    const lead = await leadModel.findOne({ 'followups._id': followUpId });
-    if (!lead) return res.status(404).json({ message: 'Follow-up not found' });
+    const lead = await leadModel.findOne({ "followups._id": followUpId });
+    if (!lead) return res.status(404).json({ message: "Follow-up not found" });
 
     const followUp = lead.followups.id(followUpId);
-    if (!followUp) return res.status(404).json({ message: 'Follow-up not found in array' });
+    if (!followUp)
+      return res.status(404).json({ message: "Follow-up not found in array" });
 
     if (followupDate !== undefined) followUp.followupDate = followupDate;
     if (followupTime !== undefined) followUp.followupTime = followupTime;
@@ -416,10 +379,12 @@ const updateFollowUpController = async (req, res) => {
     if (comment !== undefined) followUp.comment = comment.trim();
 
     await lead.save();
-    res.status(200).json({ success: true, message: 'Follow-up updated', data: followUp });
+    res
+      .status(200)
+      .json({ success: true, message: "Follow-up updated", data: followUp });
   } catch (err) {
-    console.error('Error updating follow-up:', err);
-    res.status(500).json({ message: 'Failed to update follow-up' });
+    console.error("Error updating follow-up:", err);
+    res.status(500).json({ message: "Failed to update follow-up" });
   }
 };
 
@@ -428,22 +393,24 @@ const deleteFollowUpController = async (req, res) => {
   const followUpId = req.params.id;
 
   try {
-    const lead = await leadModel.findOne({ 'followups._id': followUpId });
+    const lead = await leadModel.findOne({ "followups._id": followUpId });
     if (!lead) {
-      return res.status(404).json({ message: 'Follow-up not found' });
+      return res.status(404).json({ message: "Follow-up not found" });
     }
 
-    lead.followups = lead.followups.filter(f => f._id.toString() !== followUpId);
+    lead.followups = lead.followups.filter(
+      (f) => f._id.toString() !== followUpId
+    );
     await lead.save();
 
-    res.status(200).json({ success: true, message: 'Follow-up deleted successfully' });
+    res
+      .status(200)
+      .json({ success: true, message: "Follow-up deleted successfully" });
   } catch (err) {
-    console.error('Error deleting follow-up:', err);
-    res.status(500).json({ message: 'Failed to delete follow-up' });
+    console.error("Error deleting follow-up:", err);
+    res.status(500).json({ message: "Failed to delete follow-up" });
   }
 };
-
-
 
 module.exports = {
   createLeadController,
@@ -456,5 +423,5 @@ module.exports = {
   getFollowUpByLeadIdController,
   updateFollowUpController,
   deleteFollowUpController,
-  getLeadControllerById
+  getLeadControllerById,
 };

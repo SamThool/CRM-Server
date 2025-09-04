@@ -1,17 +1,22 @@
-const { AdminClientRegistrationModel, ClientRegistrationModel } = require("../../models/index");
-const {contactModel} =require('../../models/index');
+const {
+  AdminClientRegistrationModel,
+  ClientRegistrationModel,
+} = require("../../models/index");
+const { contactModel } = require("../../models/index");
 const { TypeOfClientModel } = require("../../models/index");
 const mongoose = require("mongoose");
-const axios = require("axios")
+const axios = require("axios");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { AdminModel } = require("../../models/index");
 // get all client registration details
 const getAllAdminClientRegistration = async (req, res) => {
   try {
-    const AdminclientRegistration = await AdminClientRegistrationModel.find()
-  .populate("contactPerson");
+    const { companyId } = req.query;
 
+    const AdminclientRegistration = await AdminClientRegistrationModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+    }).populate("contactPerson");
 
     if (!AdminclientRegistration || AdminclientRegistration.length === 0) {
       return res.status(404).json({ message: "Client registration not found" });
@@ -22,7 +27,9 @@ const getAllAdminClientRegistration = async (req, res) => {
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt) // b is newer, a is older
     );
 
-    return res.status(200).json({ status: "true", data: AdminclientRegistration });
+    return res
+      .status(200)
+      .json({ status: "true", data: AdminclientRegistration });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -30,7 +37,7 @@ const getAllAdminClientRegistration = async (req, res) => {
 
 const createAdminClientRegistration = async (req, res) => {
   try {
-    console.log('req body is',req.body)
+    console.log("req body is", req.body);
     const {
       clientName,
       officialPhoneNo,
@@ -46,13 +53,14 @@ const createAdminClientRegistration = async (req, res) => {
       pincode,
       city,
       state,
+      companyId,
       country,
       startDate,
       endDate,
       contactPerson,
-      createdBy
+      createdBy,
     } = req.body;
-    
+
     // const clientExitCheck=await ClientRegistrationModel.find({officialPhoneNo})
     // if(clientExitCheck){
     //   return res.status(400).json({message:'Client already exist',status:true})
@@ -76,10 +84,16 @@ const createAdminClientRegistration = async (req, res) => {
     // }
 
     // 📦 Validate pincode using external API
-    const response = await axios.get(`https://api.postalpincode.in/pincode/${pincode}`);
+    const response = await axios.get(
+      `https://api.postalpincode.in/pincode/${pincode}`
+    );
     const pinData = response?.data?.[0];
 
-    if (!pinData || pinData.Status !== "Success" || !pinData.PostOffice?.length) {
+    if (
+      !pinData ||
+      pinData.Status !== "Success" ||
+      !pinData.PostOffice?.length
+    ) {
       return res.status(400).json({ message: "Invalid Pincode" });
     }
 
@@ -99,8 +113,8 @@ const createAdminClientRegistration = async (req, res) => {
         expected: {
           city: validatedCity,
           state: validatedState,
-          country: validatedCountry
-        }
+          country: validatedCountry,
+        },
       });
     }
 
@@ -117,9 +131,9 @@ const createAdminClientRegistration = async (req, res) => {
     const newAdminClientRegistration = new AdminClientRegistrationModel({
       clientName,
       officialPhoneNo,
-      altPhoneNo: altPhoneNo ?? '',
+      altPhoneNo: altPhoneNo ?? "",
       officialMailId,
-      altMailId: altMailId ?? '',
+      altMailId: altMailId ?? "",
       emergencyContactPerson,
       emergencyContactNo,
       website,
@@ -129,44 +143,44 @@ const createAdminClientRegistration = async (req, res) => {
       officeAddress,
       pincode,
       city,
+      companyId,
       state,
       country,
       startDate,
       endDate,
       createdBy,
-      contactPerson: contactPerson?.map(person => ({
+      contactPerson: contactPerson?.map((person) => ({
         name: person?.name ?? "",
         department: person?.department ?? "",
         position: person?.position ?? "",
         email: person?.email ?? "",
-        phone: person?.phone ?? ""
-      }))
+        phone: person?.phone ?? "",
+      })),
     });
 
     await newAdminClientRegistration.save();
     if (contactPerson.length > 0) {
       const contacts = contactPerson.map((person) => ({
-        companyName:clientName,
+        companyName: clientName,
         name: person?.name ?? "",
         department: person?.department ?? "",
         designation: person?.position ?? "",
         email: person?.email ?? "",
-        phone: person?.phone ?? ""
+        phone: person?.phone ?? "",
       }));
-    
+
       await contactModel.create(contacts);
     }
     return res.status(201).json({
       status: true,
       message: "Client registered successfully",
-      data: newAdminClientRegistration
+      data: newAdminClientRegistration,
     });
-
   } catch (error) {
     console.error("Error in createClientRegistration:", error);
     return res.status(500).json({
       message: "Server error while registering client.",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -174,7 +188,7 @@ const createAdminClientRegistration = async (req, res) => {
 // client login
 const AdminclientLogin = async (req, res) => {
   try {
-    const values=req.body
+    const values = req.body;
     const officialMailId = values.email;
     const officialPhoneNo = values.password;
     if (!officialMailId || !officialPhoneNo) {
@@ -183,7 +197,9 @@ const AdminclientLogin = async (req, res) => {
         .json({ message: "Email and phone number required" });
     }
 
-    const client = await AdminClientRegistrationModel.findOne({ officialMailId });
+    const client = await AdminClientRegistrationModel.findOne({
+      officialMailId,
+    });
     if (!client) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -194,22 +210,21 @@ const AdminclientLogin = async (req, res) => {
 
     // Optionally, generate a JWT token here for session management
     const token = jwt.sign(
-          { id: client._id, email: client.officialMailId },
-          "Bearar"
-        );
+      { id: client._id, email: client.officialMailId },
+      "Bearar"
+    );
 
     return res.status(200).json({
       status: "true",
       message: "Login successful",
       token, // Uncomment if using JWT
-      role:client.role,
+      role: client.role,
       client,
     });
   } catch (error) {
     return res.status(500).json({ message: "Error logging in" });
   }
 };
-
 
 const updateAdminClientRegistration = async (req, res) => {
   try {
@@ -234,46 +249,55 @@ const updateAdminClientRegistration = async (req, res) => {
       startDate,
       endDate,
       contactPerson,
-      locations
+      locations,
     } = req.body;
 
-    const updatedAdminClientRegistration = await AdminClientRegistrationModel.findByIdAndUpdate(
-      id,
-      {
-        clientName,
-        officialPhoneNo,
-        altPhoneNo,
-        officialMailId,
-        altMailId,
-        emergencyContactPerson,
-        emergencyContactNo,
-        website,
-        gstNo,
-        panNo,
-        logo,
-        officeAddress,
-        pincode,
-        city,
-        state,
-        country,
-        startDate,
-        endDate,
-        contactPerson: contactPerson?.map(person => ({
-          name: person?.name ?? "",
-          department: person?.department ?? "",
-          position: person?.position ?? "",
-          email: person?.email ?? "",
-          phone: person?.phone ?? "",
-        })),
-        locations: {
-          exportCenter: Array.isArray(locations?.exportCenter) ? locations.exportCenter : [],
-          factories: Array.isArray(locations?.factories) ? locations.factories : [],
-          warehouse: Array.isArray(locations?.warehouse) ? locations.warehouse : [],
-          branches: Array.isArray(locations?.branches) ? locations.branches : [],
+    const updatedAdminClientRegistration =
+      await AdminClientRegistrationModel.findByIdAndUpdate(
+        id,
+        {
+          clientName,
+          officialPhoneNo,
+          altPhoneNo,
+          officialMailId,
+          altMailId,
+          emergencyContactPerson,
+          emergencyContactNo,
+          website,
+          gstNo,
+          panNo,
+          logo,
+          officeAddress,
+          pincode,
+          city,
+          state,
+          country,
+          startDate,
+          endDate,
+          contactPerson: contactPerson?.map((person) => ({
+            name: person?.name ?? "",
+            department: person?.department ?? "",
+            position: person?.position ?? "",
+            email: person?.email ?? "",
+            phone: person?.phone ?? "",
+          })),
+          locations: {
+            exportCenter: Array.isArray(locations?.exportCenter)
+              ? locations.exportCenter
+              : [],
+            factories: Array.isArray(locations?.factories)
+              ? locations.factories
+              : [],
+            warehouse: Array.isArray(locations?.warehouse)
+              ? locations.warehouse
+              : [],
+            branches: Array.isArray(locations?.branches)
+              ? locations.branches
+              : [],
+          },
         },
-      },
-      { new: true, runValidators: true }
-    );
+        { new: true, runValidators: true }
+      );
 
     res.status(200).json({
       success: true,
@@ -318,20 +342,26 @@ const getAdminClientRegistrationById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const AdminclientRegistration = await AdminClientRegistrationModel.findById(id)
-      .populate('locations.exportCenter')
-      .populate('locations.factories')
-      .populate('locations.warehouse')
-      .populate('locations.branches');
+    const AdminclientRegistration = await AdminClientRegistrationModel.findById(
+      id
+    )
+      .populate("locations.exportCenter")
+      .populate("locations.factories")
+      .populate("locations.warehouse")
+      .populate("locations.branches");
 
     if (!AdminclientRegistration) {
       return res.status(404).json({ message: "Client registration not found" });
     }
 
-    return res.status(200).json({ status: "true", data: AdminclientRegistration });
+    return res
+      .status(200)
+      .json({ status: "true", data: AdminclientRegistration });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Error fetching client registration" });
+    return res
+      .status(500)
+      .json({ message: "Error fetching client registration" });
   }
 };
 

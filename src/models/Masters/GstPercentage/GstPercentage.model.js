@@ -1,25 +1,30 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const gstPercentageSchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
+    },
     value: {
       type: Number,
-      required: true
+      required: true,
     },
     isDeleted: {
       type: Boolean,
-      default: false
+      default: false,
     },
     deletedAt: {
-      type: Date
-    }
+      type: Date,
+    },
   },
   {
     timestamps: true,
-    versionKey: false
+    versionKey: false,
   }
 );
 
-const GstPercentageModel = mongoose.model('GstPercentage', gstPercentageSchema);
+const GstPercentageModel = mongoose.model("GstPercentage", gstPercentageSchema);
 
 module.exports = GstPercentageModel;

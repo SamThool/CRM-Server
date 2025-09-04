@@ -1,10 +1,12 @@
+const { default: mongoose } = require("mongoose");
 const ProductOrServiceCategorymodel = require("../../../models/Masters/ProductOrServiceCategory/ProductOrServiceCategory.model");
 
 const postProductOrServiceCategory = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const { productName } = req.body;
-    console.log('req.user is', req.user);
-    const Id = req.user.adminId || req.user.staffId;;
+    console.log("req.user is", req.user);
+    const Id = req.user.adminId || req.user.staffId;
 
     if (!productName) {
       return res.status(400).json({
@@ -14,6 +16,7 @@ const postProductOrServiceCategory = async (req, res) => {
     }
 
     const newCategory = new ProductOrServiceCategorymodel({
+      companyId,
       productName,
       createdBy: Id,
     });
@@ -37,6 +40,7 @@ const postProductOrServiceCategory = async (req, res) => {
 // getProductOrServiceCategory by admin
 const getProductOrServiceCategory = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const Id = req.user.adminId || req.user.staffId; // From middleware
 
     if (!Id) {
@@ -48,8 +52,8 @@ const getProductOrServiceCategory = async (req, res) => {
     console.log("Admin ID from token:", Id);
 
     const categories = await ProductOrServiceCategorymodel.find({
-      createdBy: Id,
-    }).sort({createdAt : -1})
+      companyId: new mongoose.Types.ObjectId(companyId),
+    }).sort({ createdAt: -1 });
 
     if (!categories || categories.length === 0) {
       return res.status(404).json({

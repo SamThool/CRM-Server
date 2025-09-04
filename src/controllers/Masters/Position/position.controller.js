@@ -1,8 +1,12 @@
+const { default: mongoose } = require("mongoose");
 const { positionModel } = require("../../../models/index");
 
 const getPositionController = async (req, res) => {
   try {
-    const positions = await positionModel.find();
+    const { companyId } = req.query;
+    const positions = await positionModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+    });
     if (!positions || positions.length === 0) {
       return res
         .status(404)
@@ -13,17 +17,16 @@ const getPositionController = async (req, res) => {
 
     res.status(200).json({ status: "true", data: positions });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        status: "false",
-        message: ["Error fetching positions", error.message],
-      });
+    res.status(500).json({
+      status: "false",
+      message: ["Error fetching positions", error.message],
+    });
   }
 };
 
 const postPositionController = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const position = req.body.position;
     if (!position) {
       return res
@@ -31,16 +34,14 @@ const postPositionController = async (req, res) => {
         .json({ status: "false", message: "position is required" });
     }
 
-    const newPosition = new positionModel({ position });
+    const newPosition = new positionModel({ position, companyId });
     await newPosition.save();
     res.status(201).json({ status: "true", data: newPosition });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        status: "false",
-        message: ["Error creating position", error.message],
-      });
+    res.status(500).json({
+      status: "false",
+      message: ["Error creating position", error.message],
+    });
   }
 };
 
@@ -63,12 +64,10 @@ const putPositionController = async (req, res) => {
 
     res.status(200).json({ status: "true", data: updatedPosition });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        status: "false",
-        message: ["Error Updating position", error.message],
-      });
+    res.status(500).json({
+      status: "false",
+      message: ["Error Updating position", error.message],
+    });
   }
 };
 
@@ -87,12 +86,10 @@ const deletePositionController = async (req, res) => {
       .status(200)
       .json({ status: "true", message: "position deleted Successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        status: "false",
-        message: ["Error deleting positions", error.message],
-      });
+    res.status(500).json({
+      status: "false",
+      message: ["Error deleting positions", error.message],
+    });
   }
 };
 

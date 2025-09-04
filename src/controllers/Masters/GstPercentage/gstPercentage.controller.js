@@ -1,10 +1,12 @@
+const { default: mongoose } = require("mongoose");
 const { GstPercentageModel } = require("../../../models/index");
 
 // Create GST
 const createGst = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const { value } = req.body;
-    const gst = await GstPercentageModel.create({ value });
+    const gst = await GstPercentageModel.create({ value, companyId });
     res.status(201).json({
       message: "GST Percentage created successfully",
       data: gst,
@@ -18,7 +20,11 @@ const createGst = async (req, res) => {
 // Get all GSTs
 const getAllGsts = async (req, res) => {
   try {
-    const gsts = await GstPercentageModel.find({ isDeleted: false });
+    const { companyId } = req.query;
+    const gsts = await GstPercentageModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+      isDeleted: false,
+    });
     if (!gsts || gsts.length === 0) {
       return res.status(404).json({ message: "No GST Percentages found" });
     }

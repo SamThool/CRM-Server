@@ -1,8 +1,12 @@
+const { default: mongoose } = require("mongoose");
 const { priorityModel } = require("../../../models/index");
 
 const getPriorityController = async (req, res) => {
   try {
-    const priorities = await priorityModel.find();
+    const { companyId } = req.query;
+    const priorities = await priorityModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+    });
     if (!priorities || priorities.length === 0) {
       return res.status(404).json({
         status: "false",
@@ -11,7 +15,7 @@ const getPriorityController = async (req, res) => {
     }
 
     priorities.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
+
     res.status(200).json({ status: "true", data: priorities });
   } catch (error) {
     res.status(500).json({
@@ -23,6 +27,7 @@ const getPriorityController = async (req, res) => {
 
 const postPriorityController = async (req, res) => {
   try {
+    const { companyId } = req.query;
     const { priorityName } = req.body;
 
     if (!priorityName) {
@@ -32,7 +37,7 @@ const postPriorityController = async (req, res) => {
       });
     }
 
-    const newPriority = new priorityModel({ priorityName });
+    const newPriority = new priorityModel({ priorityName, companyId });
     await newPriority.save();
 
     res.status(201).json({ status: "true", data: newPriority });

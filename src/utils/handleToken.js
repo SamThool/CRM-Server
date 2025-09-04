@@ -13,7 +13,7 @@ const handleToken = (req, res, next) => {
   }
 
   const bearerToken = token.slice(7);
-  console.log("🔍 Incoming token:", bearerToken);
+  // console.log("🔍 Incoming token:", bearerToken);
 
   jwt.verify(bearerToken, process.env.JWT_SECRET_KEY, (err, user) => {
     if (err) {
@@ -21,12 +21,11 @@ const handleToken = (req, res, next) => {
       return res.status(403).json({ error: "Invalid Token" });
     }
 
-    console.log("✅ Decoded token payload:", user);
+    // console.log("✅ Decoded token payload:", user);
     req.user = user;
     next();
   });
 };
-
 
 // const handleToken = (req, res, next) => {
 //   const token = req.header("Authorization");
@@ -47,13 +46,12 @@ const handleToken = (req, res, next) => {
 //     if (err) {
 //       return res.status(403).json({ error: "Invalid Token" });
 //     }
-//       console.log("✅ Decoded token payload:", user); 
+//       console.log("✅ Decoded token payload:", user);
 
 //     req.user = user; // adding user to decoded
 //     next();
 //   });
 // };
-
 
 // generate token
 const generateToken = (user) => {
@@ -90,7 +88,9 @@ const verifyToken = (req, res, next) => {
     const token = authHeader.split(" ")[1]; // extract token from header
 
     if (!token) {
-      return res.status(401).json({ message: "Token not provided, Access denied..." });
+      return res
+        .status(401)
+        .json({ message: "Token not provided, Access denied..." });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -98,11 +98,10 @@ const verifyToken = (req, res, next) => {
 
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Failed to authenticate token.", error });
+    return res
+      .status(401)
+      .json({ message: "Failed to authenticate token.", error });
   }
 };
 
 module.exports = { handleToken, generateToken, verifyToken };
-
-
-

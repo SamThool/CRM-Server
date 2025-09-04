@@ -1,6 +1,6 @@
+const { default: mongoose } = require("mongoose");
 const { prospectModel } = require("../../models/index");
-const {contactModel} = require('../../models/index')
-
+const { contactModel } = require("../../models/index");
 
 //todo: create new propspect or company
 const createProspectController = async (req, res) => {
@@ -8,7 +8,7 @@ const createProspectController = async (req, res) => {
 
   try {
     const notesHtml = req.body.notes;
-    const plainText = notesHtml.replace(/<[^>]+>/g, '').trim();
+    const plainText = notesHtml.replace(/<[^>]+>/g, "").trim();
 
     const {
       companyName,
@@ -23,12 +23,17 @@ const createProspectController = async (req, res) => {
       contacts, // optional
     } = req.body;
 
+    const { companyId } = req.query;
+
+    console.log("----------------123s", companyId);
+
     const newProspectData = {
       companyName,
       phoneNo,
       dateOfIncorporation,
       network,
       address,
+      companyId,
       pincode,
       city,
       state,
@@ -52,12 +57,12 @@ const createProspectController = async (req, res) => {
           email: contact.email,
           designation: contact.designation,
           phone: contact.phone,
-          department: contact.dept
+          department: contact.dept,
         });
 
         updatedContacts.push({
           ...contact,
-          contactId: createdContact._id
+          contactId: createdContact._id,
         });
       }
 
@@ -126,13 +131,20 @@ const createProspectController = async (req, res) => {
 const getProspectController = async (req, res) => {
   try {
     // const prospects = await prospectModel.find();
-    const prospects = await prospectModel.find().sort({ createdAt: -1 });
+    const { companyId } = req.query;
+
+    console.log("----------company", companyId);
+
+    const prospects = await prospectModel
+      .find({ companyId: new mongoose.Types.ObjectId(companyId) })
+      .sort({ createdAt: -1 });
 
     if (!prospects || prospects.length === 0) {
       return res
         .status(404)
         .json({ status: "true", message: "No prospects data found" });
     }
+    console.log("------------------prospect", prospects);
 
     return res.status(200).json({ status: "true", data: prospects });
   } catch (err) {
@@ -165,7 +177,9 @@ const updateProspectController = async (req, res) => {
     );
 
     if (!updatedProspect) {
-      return res.status(404).json({ status: "false", message: "Company not found" });
+      return res
+        .status(404)
+        .json({ status: "false", message: "Company not found" });
     }
 
     // Handle updating linked contacts in /api/contact
@@ -178,7 +192,7 @@ const updateProspectController = async (req, res) => {
             email: contact.email,
             phone: contact.phone,
             designation: contact.designation,
-            department: contact.dept
+            department: contact.dept,
           });
         }
       }
