@@ -10,7 +10,6 @@ const addPrefix = async (req, res) => {
 
     const exsistingPrefix = await PrefixModel.findOne({
       prefix,
-      companyId,
       delete: deletes,
     });
     if (exsistingPrefix) {
@@ -18,7 +17,7 @@ const addPrefix = async (req, res) => {
         .status(httpStatus.BAD_REQUEST)
         .json({ msg: "The Prefix is already exists!!" });
     }
-    const newPrefix = new PrefixModel({ prefix });
+    const newPrefix = new PrefixModel({ prefix, companyId });
     await newPrefix.save();
 
     res
