@@ -8,6 +8,14 @@ const ProductSchema = new mongoose.Schema({
   productAmount: { type: Number, required: true },
 });
 
+const PaymentHistorySchema = new mongoose.Schema({
+  transactionId: { type: String },
+  paymentMode: { type: String },
+  paidAmount: { type: Number, required: true },
+  paymentBankName: { type: String },
+  paymentDate: { type: Date, default: Date.now },
+}); // ✅ now each history item will have its own _id automatically
+
 const InvoiceSchema = new mongoose.Schema({
   // Client details
   companyId: {
@@ -46,7 +54,7 @@ const InvoiceSchema = new mongoose.Schema({
 
   // Tax details
   igstPercent: { type: Number },
-  igstAmount: { type: Number },
+  igstAmount: { type: Number, default: 18 },
   cgstIgstPercentage: { type: Number },
   cgstIgstAmount: { type: Number },
   sgstPercentage: { type: Number },
@@ -54,7 +62,10 @@ const InvoiceSchema = new mongoose.Schema({
 
   // Bank details
   selectedBankId: { type: mongoose.Schema.Types.ObjectId, ref: "BankDetails" },
+
   status: { type: String, default: "unpaid" },
+
+  // Latest payment details
   paymentDetails: {
     transactionId: { type: String },
     paymentMode: { type: String },
@@ -62,6 +73,18 @@ const InvoiceSchema = new mongoose.Schema({
     paymentBankName: { type: String },
     paymentDate: { type: String },
     invoiceId: { type: String },
+  },
+
+  // 📌 Payment history (each entry has its own _id now)
+  history: {
+    type: [PaymentHistorySchema],
+    default: [],
+  },
+
+  // 📌 Total paid amount so far
+  totalPaidAmount: {
+    type: Number,
+    default: 0,
   },
 });
 

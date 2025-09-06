@@ -178,9 +178,13 @@ const getInvoiceById = async (req, res) => {
 const updateInvoice = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("Invoice ID to update:", id);
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log("Invalid invoice ID:", id);
       return res.status(400).json({ message: "Invalid invoice ID" });
     }
+
     const {
       clientId,
       clientName,
@@ -197,7 +201,6 @@ const updateInvoice = async (req, res) => {
       subTotal,
       discount,
       discountType,
-
       discountAmount,
       totalAmount,
       roundUp,
@@ -208,10 +211,11 @@ const updateInvoice = async (req, res) => {
       sgstPercentage,
       sgstAmount,
       selectedBankId,
-      status,
       paymentDetails,
     } = req.body;
-    console.log("req boyd is", req.body);
+
+    console.log("Request body:", req.body);
+
     const updateData = {
       clientId,
       clientName,
@@ -238,32 +242,71 @@ const updateInvoice = async (req, res) => {
       sgstPercentage,
       sgstAmount,
       selectedBankId,
-      status,
     };
-    if (
-      paymentDetails &&
-      typeof paymentDetails === "object" &&
-      paymentDetails.transactionId
-    ) {
-      updateData.paymentDetails = {
-        transactionId: paymentDetails.transactionId,
-        paymentMode: paymentDetails.paymentMode,
-        paidAmount: paymentDetails.paidAmount,
-        paymentBankName: paymentDetails.paymentBankName,
-        paymentDate: paymentDetails.paymentDate,
-        invoiceId: paymentDetails.invoiceId,
+
+    let updatedInvoice;
+
+    if (paymentDetails && typeof paymentDetails === "object") {
+      console.log("Updating invoice with payment details:", paymentDetails);
+
+      const normalizedPayment = {
+        ...paymentDetails,
+        paidAmount: Number(paymentDetails.paidAmount) || 0,
       };
+      console.log("Normalized payment details:", normalizedPayment);
+
+      updatedInvoice = await InvoiceModel.findByIdAndUpdate(
+        id,
+        {
+          $push: { history: normalizedPayment },
+          $set: { paymentDetails: normalizedPayment },
+        },
+        { new: true }
+      );
+
+      if (!updatedInvoice) {
+        console.log("Invoice not found after payment update:", id);
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const totalPaid = updatedInvoice.history.reduce(
+        (sum, p) => sum + Number(p.paidAmount || 0),
+        0
+      );
+      console.log("Total paid so far:", totalPaid);
+
+      const roundValue = Number(updatedInvoice.roundUp) || 0;
+      console.log("Invoice roundUp value:", roundValue);
+
+      let newStatus = "unpaid";
+      const totalPaidFixed = Number(totalPaid.toFixed(2));
+      const roundValueFixed = Number(roundValue.toFixed(2));
+
+      if (totalPaidFixed >= roundValueFixed && roundValueFixed > 0) {
+        newStatus = "paid";
+      } else if (totalPaidFixed > 0 && totalPaidFixed < roundValueFixed) {
+        newStatus = "pending";
+      }
+      console.log("Calculated new invoice status:", newStatus);
+
+      updatedInvoice.totalPaidAmount = totalPaid;
+      updatedInvoice.status = newStatus;
+
+      await updatedInvoice.save();
+      console.log("Updated invoice after payment save:", updatedInvoice);
+    } else {
+      console.log("Updating invoice without payment details");
+      updatedInvoice = await InvoiceModel.findByIdAndUpdate(id, updateData, {
+        new: true,
+      });
+      console.log("Updated invoice:", updatedInvoice);
     }
-    const updatedInvoice = await InvoiceModel.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
-    console.log("udpated Inovice is", updatedInvoice);
+
     if (!updatedInvoice) {
+      console.log("Invoice not found at final check:", id);
       return res.status(404).json({ message: "Invoice not found" });
     }
-    console.log("updatedInovice is", updatedInvoice);
+
     res.status(200).json({
       message: "Invoice updated successfully",
       status: true,
