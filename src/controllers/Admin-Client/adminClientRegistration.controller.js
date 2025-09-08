@@ -37,7 +37,9 @@ const getAllAdminClientRegistration = async (req, res) => {
 
 const createAdminClientRegistration = async (req, res) => {
   try {
-    console.log("req body is", req.body);
+    console.log("📥 Incoming request body:", req.body);
+    console.log("📎 Uploaded file:", req.file);
+
     const {
       clientName,
       officialPhoneNo,
@@ -53,7 +55,7 @@ const createAdminClientRegistration = async (req, res) => {
       pincode,
       city,
       state,
-      companyId,
+
       country,
       startDate,
       endDate,
@@ -61,39 +63,25 @@ const createAdminClientRegistration = async (req, res) => {
       createdBy,
     } = req.body;
 
-    // const clientExitCheck=await ClientRegistrationModel.find({officialPhoneNo})
-    // if(clientExitCheck){
-    //   return res.status(400).json({message:'Client already exist',status:true})
-    // }
+    const { companyId } = req.query;
 
-    // Handle uploaded logo
     const logo = req.file ? `/images/${req.file.filename}` : null;
-
-    // 🔍 Basic validation for required fields
-    // const requiredFields = [
-    //   clientName, officialPhoneNo, officialMailId,
-    //   emergencyContactPerson, emergencyContactNo,
-    //   website, gstNo, panNo, officeAddress,
-    //   pincode, city, state, country
-    // ];
-
-    // if (requiredFields.some(field => !field || field.trim() === "")) {
-    //   return res.status(400).json({
-    //     message: "All required fields must be provided."
-    //   });
-    // }
+    console.log("🖼️ Logo Path:", logo);
 
     // 📦 Validate pincode using external API
+    console.log("🌍 Validating pincode:", pincode);
     const response = await axios.get(
       `https://api.postalpincode.in/pincode/${pincode}`
     );
     const pinData = response?.data?.[0];
+    console.log("📦 Pincode API Response:", JSON.stringify(pinData, null, 2));
 
     if (
       !pinData ||
       pinData.Status !== "Success" ||
       !pinData.PostOffice?.length
     ) {
+      console.warn("❌ Invalid Pincode provided:", pincode);
       return res.status(400).json({ message: "Invalid Pincode" });
     }
 
@@ -102,12 +90,22 @@ const createAdminClientRegistration = async (req, res) => {
     const validatedState = postOfficeInfo.State;
     const validatedCountry = postOfficeInfo.Country;
 
+    console.log("📍 Validated location from API:", {
+      validatedCity,
+      validatedState,
+      validatedCountry,
+    });
+
     // 🔍 Cross-check location
     if (
       city.toLowerCase() !== validatedCity.toLowerCase() ||
       state.toLowerCase() !== validatedState.toLowerCase() ||
       country.toLowerCase() !== validatedCountry.toLowerCase()
     ) {
+      console.warn("❌ Location mismatch:", {
+        sent: { city, state, country },
+        expected: { validatedCity, validatedState, validatedCountry },
+      });
       return res.status(400).json({
         message: "City/State/Country doesn't match the pincode.",
         expected: {
@@ -118,16 +116,7 @@ const createAdminClientRegistration = async (req, res) => {
       });
     }
 
-    // 👤 Structure nested contact person object
-    // const contactPerson = {
-    //   name: contactPerson_name ?? "",
-    //   department: contactPerson_department ?? "",
-    //   position: contactPerson_position ?? "",
-    //   email: contactPerson_email ?? "",
-    //   phone: contactPerson_phone ?? ""
-    // };
-
-    // 📝 Create new client document
+    // 📝 Create new AdminClientRegistration document
     const newAdminClientRegistration = new AdminClientRegistrationModel({
       clientName,
       officialPhoneNo,
@@ -158,10 +147,24 @@ const createAdminClientRegistration = async (req, res) => {
       })),
     });
 
+    console.log(
+      "📝 New AdminClientRegistration object:",
+      newAdminClientRegistration
+    );
+
     await newAdminClientRegistration.save();
-    if (contactPerson.length > 0) {
+    console.log(
+      "✅ AdminClientRegistration saved:",
+      newAdminClientRegistration._id
+    );
+
+    // Save contacts separately
+    if (contactPerson?.length > 0) {
+      console.log("👥 Saving contact persons:", contactPerson.length);
+
       const contacts = contactPerson.map((person) => ({
         companyName: clientName,
+        companyId: companyId,
         name: person?.name ?? "",
         department: person?.department ?? "",
         designation: person?.position ?? "",
@@ -169,15 +172,21 @@ const createAdminClientRegistration = async (req, res) => {
         phone: person?.phone ?? "",
       }));
 
+      console.log("📤 Contacts to be saved in contactModel:", contacts);
+
       await contactModel.create(contacts);
+      console.log("✅ Contact persons saved successfully");
+    } else {
+      console.log("ℹ️ No contact persons to save.");
     }
+
     return res.status(201).json({
       status: true,
       message: "Client registered successfully",
       data: newAdminClientRegistration,
     });
   } catch (error) {
-    console.error("Error in createClientRegistration:", error);
+    console.error("🔥 Error in createAdminClientRegistration:", error);
     return res.status(500).json({
       message: "Server error while registering client.",
       error: error.message,

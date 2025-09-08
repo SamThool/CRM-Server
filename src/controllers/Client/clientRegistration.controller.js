@@ -8,7 +8,6 @@ const jwt = require("jsonwebtoken");
 const { AdminModel } = require("../../models/index");
 require("dotenv").config();
 
-
 // get all client registration details
 const getAllClientRegistration = async (req, res) => {
   try {
@@ -216,7 +215,7 @@ const clientLogin = async (req, res) => {
     const token = jwt.sign(
       { id: client._id, email: client.officialMailId },
       // "Bearar"
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET
     );
 
     res.cookie("hmsToken", token, {
