@@ -53,6 +53,7 @@ const createProspectController = async (req, res) => {
       for (let contact of contacts) {
         const createdContact = await contactModel.create({
           companyName: companyName,
+          companyId: companyId,
           name: contact.name,
           email: contact.email,
           designation: contact.designation,

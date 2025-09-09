@@ -75,18 +75,21 @@ const InvoiceSchema = new mongoose.Schema({
     invoiceId: { type: String },
   },
 
-  // 📌 Payment history (each entry has its own _id now)
+  // 📌 Payment history
   history: {
     type: [PaymentHistorySchema],
     default: [],
   },
 
-  // 📌 Total paid amount so far
+  // 📌 Total paid amount
   totalPaidAmount: {
     type: Number,
     default: 0,
   },
 });
+
+// Compound unique index to enforce uniqueness per company
+InvoiceSchema.index({ companyId: 1, invoiceNumber: 1 }, { unique: true });
 
 const InvoiceModel = mongoose.model("Invoice", InvoiceSchema);
 module.exports = InvoiceModel;
