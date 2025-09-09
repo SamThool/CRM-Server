@@ -10,7 +10,6 @@ const networkSchema = new mongoose.Schema(
     networkName: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
   },

@@ -62,7 +62,9 @@ const createInvoice = async (req, res) => {
     }
     const isInvoiceNumberExists = await InvoiceModel.findOne({
       invoiceNumber: invoiceNumber,
+      companyId: companyId,
     });
+
     if (isInvoiceNumberExists) {
       return res
         .status(400)

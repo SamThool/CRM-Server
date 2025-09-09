@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const { TaskModel } = require("../../models/index");
 const { priorityModel } = require("../../models/index");
 const { taskStatusModel } = require("../../models/index");

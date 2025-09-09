@@ -32,7 +32,7 @@ const createNetworkController = async (req, res) => {
         .status(400)
         .json({ status: "false", message: "Network Name already exists" });
 
-    const newNetwork = new NetworkModel({ networkName });
+    const newNetwork = new NetworkModel({ networkName, companyId });
     await newNetwork.save();
     res.status(201).json({ status: "true", data: newNetwork });
   } catch (err) {

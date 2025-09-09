@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const TicketManageModel = require("../../models/TicketManagement/TicketManagement.model");
 
 // Create a new ticket

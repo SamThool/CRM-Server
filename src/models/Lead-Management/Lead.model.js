@@ -28,11 +28,22 @@ const contactSchema = new mongoose.Schema(
 const leadSchema = new mongoose.Schema(
   {
     // References (use ObjectId and ref for population)
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
+    },
     Prospect: { type: mongoose.Schema.Types.ObjectId, ref: "prospect" },
-    Client: { type: mongoose.Schema.Types.ObjectId, ref: "AdminclientRegistration" },
-    newCompanyName: { type: String, default: '' },
+    Client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AdminclientRegistration",
+    },
+    newCompanyName: { type: String, default: "" },
     reference: { type: mongoose.Schema.Types.ObjectId, ref: "leadReference" },
-    productService: { type: mongoose.Schema.Types.ObjectId, ref: "ProductOrServiceCategory" },
+    productService: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProductOrServiceCategory",
+    },
     leadstatus: { type: mongoose.Schema.Types.ObjectId, ref: "leadStatus" },
     leadType: { type: mongoose.Schema.Types.ObjectId, ref: "leadType" },
     assignTo: { type: mongoose.Schema.Types.ObjectId, ref: "Administrative" },
