@@ -2,13 +2,14 @@ const { Administrative, AdminModel } = require("../../../models");
 const { SaveCredentials } = require("../HelperFunctions/SavedCredential");
 const checkDuplicateFields = require("../HelperFunctions/CheckDuplicateEntries");
 const { CompanySetupModel } = require("../../../models");
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-require('dotenv').config()
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const createBasicDetails = async (req, res) => {
   try {
     const { contactNumber, email, adharNumber } = req.body;
+    const { companyId } = req.query;
 
     // Check for duplicates
     const errorMessage = await checkDuplicateFields(Administrative, {
@@ -43,6 +44,7 @@ const createBasicDetails = async (req, res) => {
     }
     // Create new basic details entry
     const newBasicDetails = new Administrative({
+      companyId,
       basicDetails: basicDetails,
     });
 
@@ -56,9 +58,9 @@ const createBasicDetails = async (req, res) => {
     if (savedBasicDetails?.basicDetails) {
       const { firstName, lastName } = savedBasicDetails.basicDetails;
       fullName = `${firstName || ""} ${lastName || ""}`.trim();
-      console.log("full Name: ", fullName)
+      console.log("full Name: ", fullName);
     }
-    console.log("fully basic detail name", fullName)
+    console.log("fully basic detail name", fullName);
     // contactNumber, email:
     const hashedPassword = await bcrypt.hash(contactNumber, 10);
     const newStaff = new AdminModel({
@@ -122,7 +124,7 @@ const loginStaff = async (req, res) => {
     }
 
     // 2. Check if role is 'staff'
-    if (staff.role !== 'staff') {
+    if (staff.role !== "staff") {
       return res.status(403).json({ msg: "You are not authorized as staff." });
     }
 
@@ -143,15 +145,15 @@ const loginStaff = async (req, res) => {
     //   "Bearar"
     // );
     const token = jwt.sign(
-  { 
-    staffId: staff._id,
-    branchId: staff.refId,
-    role: staff.role, // Include role for later checks
-    // systemRight: populatedUser?.refId?.systemRights || [] // Include rights so backend can check access
-  },
-  process.env.JWT_SECRET_KEY, // ✅ same as in handleToken
-  { expiresIn: '7d' } // Optional expiry
-);
+      {
+        staffId: staff._id,
+        branchId: staff.refId,
+        role: staff.role, // Include role for later checks
+        // systemRight: populatedUser?.refId?.systemRights || [] // Include rights so backend can check access
+      },
+      process.env.JWT_SECRET_KEY, // ✅ same as in handleToken
+      { expiresIn: "7d" } // Optional expiry
+    );
 
     // 5. Populate refId with Administrative details
     const populatedUser = await AdminModel.findOne({ email }).populate({
@@ -185,14 +187,13 @@ const loginStaff = async (req, res) => {
       systemRight: populatedUser?.refId?.systemRights || {},
     };
 
-    console.log("staff response data:", responseData)
+    console.log("staff response data:", responseData);
     res.status(200).json(responseData);
   } catch (error) {
     console.error("Staff login error:", error);
     res.status(500).json({ msg: "Server error" });
   }
 };
-
 
 function cleanBankField(field) {
   if (Array.isArray(field)) field = field[0];

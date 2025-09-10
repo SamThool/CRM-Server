@@ -188,7 +188,7 @@ const SalaryAndWages = new mongoose.Schema({
   position: String, // ✅
   incomeDetails: {
     basicSalary: Number, // ✅
-    incomeComponents: { 
+    incomeComponents: {
       // ✅
       type: Map, // Dynamic income components as Map
       of: Number,
@@ -212,6 +212,11 @@ const SalaryAndWages = new mongoose.Schema({
 // Main schema for administrative records
 const administrativeSchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true,
+    },
     basicDetails: basicDetailsSchema,
     pastEmploymentDetails: [pastEmploymentDetailsSchema],
     employmentDetails: employmentDetailsSchema,
