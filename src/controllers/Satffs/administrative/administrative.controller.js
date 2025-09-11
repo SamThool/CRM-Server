@@ -185,6 +185,8 @@ const loginStaff = async (req, res) => {
       departmentId: departmentId || "",
       empCode: populatedUser?.refId?.basicDetails?.empCode || "",
       systemRight: populatedUser?.refId?.systemRights || {},
+      companyId: populatedUser?.refId?.companyId,
+      empId: populatedUser?.refId?._id,
     };
 
     console.log("staff response data:", responseData);

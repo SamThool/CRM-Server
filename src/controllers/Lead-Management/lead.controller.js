@@ -158,18 +158,35 @@ const createLeadController = async (req, res) => {
 const getLeadController = async (req, res) => {
   try {
     const { companyId } = req.query;
+    const { empId } = req.params; // <-- param (optional)
+
+    if (!companyId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "companyId is required" });
+    }
+
+    // base filter
+    let filter = { companyId: new mongoose.Types.ObjectId(companyId) };
+
+    // if empId param is present, add assignTo filter
+    if (empId) {
+      filter.assignTo = new mongoose.Types.ObjectId(empId);
+    }
+
     const leads = await leadModel
-      .find({ companyId: new mongoose.Types.ObjectId(companyId) })
+      .find(filter)
       .populate("Prospect", "companyName")
       .populate("Client")
       .populate("reference", "LeadReference")
       .populate("productService", "productName")
-      .populate("leadstatus") // <-- FIXED!
+      .populate("leadstatus")
       .populate("leadType", "LeadType")
       .populate(
         "assignTo",
         "basicDetails.firstName basicDetails.lastName basicDetails.email"
       );
+
     res.status(200).json({
       success: true,
       total: leads.length,
