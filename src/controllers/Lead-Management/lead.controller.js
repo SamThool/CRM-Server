@@ -29,10 +29,10 @@ const createLeadController = async (req, res) => {
       Prospect,
       Client,
       newCompanyName,
-      firstName,
-      middleName,
-      lastName,
-      gender,
+      // firstName,
+      // middleName,
+      // lastName,
+      // gender,
       countryCode,
       phoneNo,
       altPhoneNo,
@@ -58,9 +58,9 @@ const createLeadController = async (req, res) => {
 
     // Validation: required fields
     const requiredFields = [
-      "firstName",
-      "lastName",
-      "gender",
+      // "firstName",
+      // "lastName",
+      // "gender",
       "countryCode",
       "phoneNo",
       "email",
@@ -114,10 +114,10 @@ const createLeadController = async (req, res) => {
       Client: leadCategory === "client" ? Client : undefined,
       newCompanyName: leadCategory === "newLead" ? newCompanyName : undefined,
       companyName,
-      firstName,
-      middleName,
-      lastName,
-      gender,
+      // firstName,
+      // middleName,
+      // lastName,
+      // gender,
       countryCode,
       companyId,
       phoneNo,
@@ -158,19 +158,19 @@ const createLeadController = async (req, res) => {
 const getLeadController = async (req, res) => {
   try {
     const { companyId } = req.query;
-    const { empId } = req.params; // <-- param (optional)
+    const { empId } = req.params;
 
-    if (!companyId) {
+    if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
       return res
         .status(400)
-        .json({ success: false, message: "companyId is required" });
+        .json({ success: false, message: "Valid companyId is required" });
     }
 
     // base filter
     let filter = { companyId: new mongoose.Types.ObjectId(companyId) };
 
-    // if empId param is present, add assignTo filter
-    if (empId) {
+    // empId param (optional)
+    if (empId && mongoose.Types.ObjectId.isValid(empId)) {
       filter.assignTo = new mongoose.Types.ObjectId(empId);
     }
 
@@ -186,6 +186,8 @@ const getLeadController = async (req, res) => {
         "assignTo",
         "basicDetails.firstName basicDetails.lastName basicDetails.email"
       );
+
+    console.log(leads[4]);
 
     res.status(200).json({
       success: true,

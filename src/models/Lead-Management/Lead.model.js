@@ -49,9 +49,9 @@ const leadSchema = new mongoose.Schema(
     assignTo: { type: mongoose.Schema.Types.ObjectId, ref: "Administrative" },
 
     // Main fields
-    firstName: { type: String, required: true },
+    firstName: { type: String },
     middleName: { type: String },
-    lastName: { type: String, required: true },
+    lastName: { type: String },
     gender: { type: String },
     countryCode: { type: String },
     phoneNo: { type: String, required: true },
