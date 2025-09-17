@@ -145,7 +145,6 @@ const getProspectController = async (req, res) => {
         .status(404)
         .json({ status: "true", message: "No prospects data found" });
     }
-    console.log("------------------prospect", prospects);
 
     return res.status(200).json({ status: "true", data: prospects });
   } catch (err) {

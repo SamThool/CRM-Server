@@ -4,6 +4,7 @@ const checkDuplicateFields = require("../HelperFunctions/CheckDuplicateEntries")
 const { CompanySetupModel } = require("../../../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 
 const createBasicDetails = async (req, res) => {
@@ -638,7 +639,12 @@ const updateSystemRights = async (req, res) => {
 
 const getAllAdministrativeData = async (req, res) => {
   try {
-    const administrativeData = await Administrative.find({ delete: false })
+    const { companyId } = req.query;
+
+    const administrativeData = await Administrative.find({
+      delete: false,
+      companyId: new mongoose.Types.ObjectId(companyId),
+    })
       .populate("employmentDetails.department")
       .populate("employmentDetails.position")
       .populate("basicDetails.prefix")

@@ -160,6 +160,8 @@ const getLeadController = async (req, res) => {
     const { companyId } = req.query;
     const { empId } = req.params;
 
+    console.log(empId);
+
     if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
       return res
         .status(400)
@@ -171,7 +173,7 @@ const getLeadController = async (req, res) => {
 
     // empId param (optional)
     if (empId && mongoose.Types.ObjectId.isValid(empId)) {
-      filter.assignTo = new mongoose.Types.ObjectId(empId);
+      filter._id = new mongoose.Types.ObjectId(empId);
     }
 
     const leads = await leadModel
@@ -186,8 +188,6 @@ const getLeadController = async (req, res) => {
         "assignTo",
         "basicDetails.firstName basicDetails.lastName basicDetails.email"
       );
-
-    console.log(leads[4]);
 
     res.status(200).json({
       success: true,
