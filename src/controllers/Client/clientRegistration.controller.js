@@ -66,13 +66,14 @@ const createClientRegistration = async (req, res) => {
       emergencyContactNo,
       website,
       gstNo,
-      panNo,
+      // panNo,
       officeAddress,
       pincode,
       city,
       state,
       country,
     ];
+    console.log("req", requiredFields);
 
     if (requiredFields.some((field) => !field || field.trim() === "")) {
       return res.status(400).json({

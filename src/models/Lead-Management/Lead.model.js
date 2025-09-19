@@ -39,6 +39,7 @@ const leadSchema = new mongoose.Schema(
       ref: "AdminclientRegistration",
     },
     newCompanyName: { type: String, default: "" },
+    companyName: { type: String, default: "" },
     reference: { type: mongoose.Schema.Types.ObjectId, ref: "leadReference" },
     productService: {
       type: mongoose.Schema.Types.ObjectId,

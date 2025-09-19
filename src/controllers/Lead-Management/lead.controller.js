@@ -173,7 +173,7 @@ const getLeadController = async (req, res) => {
 
     // empId param (optional)
     if (empId && mongoose.Types.ObjectId.isValid(empId)) {
-      filter._id = new mongoose.Types.ObjectId(empId);
+      filter.assignTo = new mongoose.Types.ObjectId(empId);
     }
 
     const leads = await leadModel
@@ -258,6 +258,8 @@ const updateLeadController = async (req, res) => {
         updateData[key] = undefined;
       }
     });
+
+    console.log("------------------------------------------", updateData);
 
     // Update only provided fields; $set ensures only changed fields are updated.
     const updatedLead = await leadModel

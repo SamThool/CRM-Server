@@ -134,7 +134,7 @@ const getProspectController = async (req, res) => {
     // const prospects = await prospectModel.find();
     const { companyId } = req.query;
 
-    console.log("----------company", companyId);
+    // console.log("----------company", companyId);
 
     const prospects = await prospectModel
       .find({ companyId: new mongoose.Types.ObjectId(companyId) })

@@ -47,7 +47,11 @@ leadRouter.delete(
 // ---------- LEAD ROUTES WITH PARAMS (less specific, must go last) ----------
 
 // Get lead by ID
-leadRouter.get("/:id", handleToken, leadController.getLeadControllerById);
+leadRouter.get(
+  "/:empId/:id",
+  handleToken,
+  leadController.getLeadControllerById
+);
 
 // Update lead
 leadRouter.put("/:id", handleToken, leadController.updateLeadController);
