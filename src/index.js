@@ -18,6 +18,8 @@ const allowedOrigins = [
   "https://crm-client-phi.vercel.app",
 ];
 
+app.use("/api/uploads", express.static("public/images"));
+
 app.use(
   cors({
     origin: function (origin, callback) {

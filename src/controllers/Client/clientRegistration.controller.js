@@ -252,7 +252,7 @@ const updateClientRegistration = async (req, res) => {
       website,
       gstNo,
       panNo,
-      logo,
+
       officeAddress,
       pincode,
       city,
@@ -264,6 +264,14 @@ const updateClientRegistration = async (req, res) => {
       contactPerson,
       locations,
     } = req.body;
+
+    // ✅ Handle logo from multer
+    let logoPath = undefined;
+    if (req.file) {
+      logoPath = req.file.path; // or `req.file.filename` depending on storage config
+    }
+
+    console.log("----------------------------", logoPath);
 
     const updatedClientRegistration =
       await ClientRegistrationModel.findByIdAndUpdate(
@@ -279,7 +287,7 @@ const updateClientRegistration = async (req, res) => {
           website,
           gstNo,
           panNo,
-          logo,
+          logo: logoPath,
           officeAddress,
           pincode,
           city,
