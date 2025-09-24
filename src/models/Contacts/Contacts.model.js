@@ -9,7 +9,7 @@ const contactSchema = new mongoose.Schema(
     },
     companyName: { type: String },
     name: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String },
     designation: { type: String },
     phone: { type: String },
     department: {

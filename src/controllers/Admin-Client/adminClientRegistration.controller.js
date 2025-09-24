@@ -69,52 +69,52 @@ const createAdminClientRegistration = async (req, res) => {
     console.log("🖼️ Logo Path:", logo);
 
     // 📦 Validate pincode using external API
-    console.log("🌍 Validating pincode:", pincode);
-    const response = await axios.get(
-      `https://api.postalpincode.in/pincode/${pincode}`
-    );
-    const pinData = response?.data?.[0];
-    console.log("📦 Pincode API Response:", JSON.stringify(pinData, null, 2));
+    // console.log("🌍 Validating pincode:", pincode);
+    // const response = await axios.get(
+    // `https://api.postalpincode.in/pincode/${pincode}`
+    // );
+    // const pinData = response?.data?.[0];
+    // console.log("📦 Pincode API Response:", JSON.stringify(pinData, null, 2));
 
-    if (
-      !pinData ||
-      pinData.Status !== "Success" ||
-      !pinData.PostOffice?.length
-    ) {
-      console.warn("❌ Invalid Pincode provided:", pincode);
-      return res.status(400).json({ message: "Invalid Pincode" });
-    }
+    // if (
+    //   !pinData ||
+    //   pinData.Status !== "Success" ||
+    //   !pinData.PostOffice?.length
+    // ) {
+    //   console.warn("❌ Invalid Pincode provided:", pincode);
+    //   // return res.status(400).json({ message: "Invalid Pincode" });
+    // }
 
-    const postOfficeInfo = pinData.PostOffice[0];
-    const validatedCity = postOfficeInfo.District;
-    const validatedState = postOfficeInfo.State;
-    const validatedCountry = postOfficeInfo.Country;
+    // const postOfficeInfo = pinData?.PostOffice[0];
+    // const validatedCity = postOfficeInfo?.District;
+    // const validatedState = postOfficeInfo?.State;
+    // const validatedCountry = postOfficeInfo?.Country;
 
-    console.log("📍 Validated location from API:", {
-      validatedCity,
-      validatedState,
-      validatedCountry,
-    });
+    // console.log("📍 Validated location from API:", {
+    //   validatedCity,
+    //   validatedState,
+    //   validatedCountry,
+    // });
 
     // 🔍 Cross-check location
-    if (
-      city.toLowerCase() !== validatedCity.toLowerCase() ||
-      state.toLowerCase() !== validatedState.toLowerCase() ||
-      country.toLowerCase() !== validatedCountry.toLowerCase()
-    ) {
-      console.warn("❌ Location mismatch:", {
-        sent: { city, state, country },
-        expected: { validatedCity, validatedState, validatedCountry },
-      });
-      return res.status(400).json({
-        message: "City/State/Country doesn't match the pincode.",
-        expected: {
-          city: validatedCity,
-          state: validatedState,
-          country: validatedCountry,
-        },
-      });
-    }
+    // if (
+    //   city.toLowerCase() !== validatedCity.toLowerCase() ||
+    //   state.toLowerCase() !== validatedState.toLowerCase() ||
+    //   country.toLowerCase() !== validatedCountry.toLowerCase()
+    // ) {
+    //   console.warn("❌ Location mismatch:", {
+    //     sent: { city, state, country },
+    //     expected: { validatedCity, validatedState, validatedCountry },
+    //   });
+    // return res.status(400).json({
+    //   message: "City/State/Country doesn't match the pincode.",
+    //   expected: {
+    //     city: validatedCity,
+    //     state: validatedState,
+    //     country: validatedCountry,
+    //   },
+    // });
+    // }
 
     // 📝 Create new AdminClientRegistration document
     const newAdminClientRegistration = new AdminClientRegistrationModel({

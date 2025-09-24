@@ -7,7 +7,7 @@ const { CompanySetupModel } = require("../models");
 require("dotenv").config();
 const httpStatus = require("http-status");
 const { DepartmentSetupModel } = require("../models");
-const mongoose = require('mongoose'); // ✅ make sure it's imported
+const mongoose = require("mongoose"); // ✅ make sure it's imported
 
 const {
   Administrative,
@@ -69,7 +69,7 @@ const loginAdmin = async (req, res) => {
         .json({ msg: "Invalid email or password" });
     }
     // Check if the account is blocked
-    console.log('admin is',admin)
+    console.log("admin is", admin);
     if (admin.isBlocked) {
       return res
         .status(httpStatus.FORBIDDEN)
@@ -85,7 +85,12 @@ const loginAdmin = async (req, res) => {
 
     // Generate token
     const token = jwt.sign(
-      { adminId: admin._id, branchId: admin.refId, pass : admin.password, role: 'admin' },
+      {
+        adminId: admin._id,
+        branchId: admin.refId,
+        pass: admin.password,
+        role: "admin",
+      },
       // "Bearar"
       process.env.JWT_SECRET_KEY
     );
@@ -114,10 +119,10 @@ const loginAdmin = async (req, res) => {
       login: admin,
       departmentName: departmentName ? departmentName : "",
       departmentId: departmentId ? departmentId : "",
-      empCode:populatedUser?.refId?.basicDetails?.empCode || "",
+      empCode: populatedUser?.refId?.basicDetails?.empCode || "",
       systemRight: populatedUser?.refId?.systemRights || {},
     };
-    console.log("responseData", responseData);                                                                            
+    console.log("responseData", responseData);
 
     res.status(httpStatus.OK).json(responseData);
   } catch (error) {
@@ -362,23 +367,27 @@ const getSystemRights = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log('🔍 Received ID:', id);
+    console.log("🔍 Received ID:", id);
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid or missing id parameter" });
+      return res
+        .status(400)
+        .json({ message: "Invalid or missing id parameter" });
     }
 
     const userFromAdminsRecord = await AdminModel.findById(id);
 
     if (!userFromAdminsRecord) {
-      console.log('❌ Admin record not found for ID:', id);
+      console.log("❌ Admin record not found for ID:", id);
       return res.status(404).json({ error: "Admin record not found" });
     }
 
     // Populate the refId from the refType model
-    const populatedUser = await AdminModel.findOne({ email: userFromAdminsRecord.email }).populate({
-      path: 'refId',
-      model: userFromAdminsRecord.refType
+    const populatedUser = await AdminModel.findOne({
+      email: userFromAdminsRecord.email,
+    }).populate({
+      path: "refId",
+      model: userFromAdminsRecord.refType,
     });
 
     const systemRights = populatedUser?.refId?.systemRights || {};
@@ -386,20 +395,17 @@ const getSystemRights = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "System rights retrieved successfully",
-      systemRights
+      systemRights,
     });
   } catch (error) {
     console.error("🔥 Error in getSystemRights:", error);
     return res.status(500).json({
       success: false,
       error: "Internal server error",
-      details: error.message
+      details: error.message,
     });
   }
 };
-
-
-
 
 const fetchUserSuspensionStatus = async (req, res) => {
   try {
@@ -473,9 +479,7 @@ const updateUserSuspensionStatus = async (req, res) => {
   }
 };
 
-
 const getSystemRightsById = async (req, res) => {
-
   console.log("getSystemRightsById called");
   try {
     const { id } = req.params;
@@ -517,7 +521,6 @@ const getSystemRightsById = async (req, res) => {
   }
 };
 
-
 //todo: change password
 const changePassword = async (req, res) => {
   try {
@@ -527,19 +530,19 @@ const changePassword = async (req, res) => {
     const adminId = req.user?.adminId; // Assuming handleToken middleware decodes the token and attaches adminId to req.user
 
     if (!adminId) {
-      return res.status(401).json({ msg: 'Unauthorized. Invalid token.' });
+      return res.status(401).json({ msg: "Unauthorized. Invalid token." });
     }
 
     // ✅ Fetch full admin from DB
     const admin = await AdminModel.findById(adminId);
     if (!admin) {
-      return res.status(404).json({ msg: 'Admin not found' });
+      return res.status(404).json({ msg: "Admin not found" });
     }
 
     // ✅ Check old password
     const isMatch = await bcrypt.compare(oldPassword, admin.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: 'Old password is incorrect' });
+      return res.status(400).json({ msg: "Old password is incorrect" });
     }
 
     // ✅ Hash and update new password
@@ -547,10 +550,36 @@ const changePassword = async (req, res) => {
     admin.password = hashedPassword;
     await admin.save();
 
-    return res.status(200).json({ msg: 'Password changed successfully' });
+    return res.status(200).json({ msg: "Password changed successfully" });
   } catch (error) {
-    console.error('Error changing password:', error);
-    return res.status(500).json({ msg: 'Server error' });
+    console.error("Error changing password:", error);
+    return res.status(500).json({ msg: "Server error" });
+  }
+};
+
+const verifyAndSendOtp = async (req, res) => {
+  try {
+    // const { email } = req.body;
+    // const admin = await AdminModel.find({ email: email });
+    // if (!admin) {
+    //   return res.status(404).json({ msg: "Email not found" });
+    // }
+
+    //   // generate otp
+    // const otp = crypto.randomInt(100000, 999999);
+
+    //  // save otp with expiry
+    // admin.resetOtp = otp;
+    // admin.resetOtpExpires = Date.now() + 10 * 60 * 1000; // valid for 10 mins
+    // await admin.save();
+
+    return res.status(200).json({
+      success: true,
+      msg: `Otp Send on ${email}`,
+    });
+  } catch (error) {
+    console.error("Error sending otp for forget password:", error);
+    return res.status(500).json({ msg: "Server error" });
   }
 };
 
@@ -567,5 +596,6 @@ module.exports = {
   fetchUserSuspensionStatus,
   updateUserSuspensionStatus,
   getSystemRightsById,
-  changePassword
+  changePassword,
+  verifyAndSendOtp,
 };

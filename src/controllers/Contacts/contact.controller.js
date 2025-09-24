@@ -33,16 +33,25 @@ const getContacts = async (req, res) => {
 // CREATE CONTACT
 const createContact = async (req, res) => {
   try {
-    const { companyName, name, email, designation, phone, department } =
-      req.body;
+    const {
+      companyName = "",
+      name = "",
+      email = "",
+      designation = "",
+      phone = "",
+      department = "",
+    } = req.body;
 
-    const { companyId } = req.query;
+    const { companyId = "" } = req.query;
 
-    // 🔍 Lookup department by name
-    const dept = await departmentModel.findOne({ department });
-
-    if (!dept) {
-      return res.status(400).json({ message: "Invalid department name" });
+    // 🔍 Lookup department by name (only if provided)
+    let deptName = "";
+    if (department) {
+      const dept = await departmentModel.findOne({ department });
+      if (!dept) {
+        return res.status(400).json({ message: "Invalid department name" });
+      }
+      deptName = dept.department;
     }
 
     const newContact = new contactModel({
@@ -52,7 +61,7 @@ const createContact = async (req, res) => {
       designation,
       companyId,
       phone,
-      department: dept.department, // Store actual department name
+      department: deptName,
     });
 
     await newContact.save();
