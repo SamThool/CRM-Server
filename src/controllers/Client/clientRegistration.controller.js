@@ -62,16 +62,16 @@ const createClientRegistration = async (req, res) => {
       clientName,
       officialPhoneNo,
       officialMailId,
-      emergencyContactPerson,
-      emergencyContactNo,
-      website,
-      gstNo,
+      // emergencyContactPerson,
+      // emergencyContactNo,
+      // website,
+      // gstNo,
       // panNo,
-      officeAddress,
-      pincode,
-      city,
-      state,
-      country,
+      // officeAddress,
+      // pincode,
+      // city,
+      // state,
+      // country,
     ];
     console.log("req", requiredFields);
 
@@ -81,40 +81,40 @@ const createClientRegistration = async (req, res) => {
       });
     }
 
-    // 📦 Validate pincode using external API
-    const response = await axios.get(
-      `https://api.postalpincode.in/pincode/${pincode}`
-    );
-    const pinData = response?.data?.[0];
+    // // 📦 Validate pincode using external API
+    // const response = await axios.get(
+    //   `https://api.postalpincode.in/pincode/${pincode}`
+    // );
+    // const pinData = response?.data?.[0];
 
-    if (
-      !pinData ||
-      pinData.Status !== "Success" ||
-      !pinData.PostOffice?.length
-    ) {
-      return res.status(400).json({ message: "Invalid Pincode" });
-    }
+    // if (
+    //   !pinData ||
+    //   pinData.Status !== "Success" ||
+    //   !pinData.PostOffice?.length
+    // ) {
+    //   return res.status(400).json({ message: "Invalid Pincode" });
+    // }
 
-    const postOfficeInfo = pinData.PostOffice[0];
-    const validatedCity = postOfficeInfo.District;
-    const validatedState = postOfficeInfo.State;
-    const validatedCountry = postOfficeInfo.Country;
+    // const postOfficeInfo = pinData.PostOffice[0];
+    // const validatedCity = postOfficeInfo.District;
+    // const validatedState = postOfficeInfo.State;
+    // const validatedCountry = postOfficeInfo.Country;
 
-    // 🔍 Cross-check location
-    if (
-      city.toLowerCase() !== validatedCity.toLowerCase() ||
-      state.toLowerCase() !== validatedState.toLowerCase() ||
-      country.toLowerCase() !== validatedCountry.toLowerCase()
-    ) {
-      return res.status(400).json({
-        message: "City/State/Country doesn't match the pincode.",
-        expected: {
-          city: validatedCity,
-          state: validatedState,
-          country: validatedCountry,
-        },
-      });
-    }
+    // // 🔍 Cross-check location
+    // if (
+    //   city.toLowerCase() !== validatedCity.toLowerCase() ||
+    //   state.toLowerCase() !== validatedState.toLowerCase() ||
+    //   country.toLowerCase() !== validatedCountry.toLowerCase()
+    // ) {
+    //   return res.status(400).json({
+    //     message: "City/State/Country doesn't match the pincode.",
+    //     expected: {
+    //       city: validatedCity,
+    //       state: validatedState,
+    //       country: validatedCountry,
+    //     },
+    //   });
+    // }
 
     // 🔎 Validate clientType ObjectId exists
     const typeOfClientDoc = await TypeOfClientModel.findById(clientType);

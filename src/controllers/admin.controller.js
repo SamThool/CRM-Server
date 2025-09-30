@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { ConsultantModel } = require("../models");
 const { EmployeeModel } = require("../models");
@@ -8,6 +9,7 @@ require("dotenv").config();
 const httpStatus = require("http-status");
 const { DepartmentSetupModel } = require("../models");
 const mongoose = require("mongoose"); // ✅ make sure it's imported
+const nodemailer = require("nodemailer");
 
 const {
   Administrative,
@@ -559,19 +561,41 @@ const changePassword = async (req, res) => {
 
 const verifyAndSendOtp = async (req, res) => {
   try {
-    // const { email } = req.body;
-    // const admin = await AdminModel.find({ email: email });
-    // if (!admin) {
-    //   return res.status(404).json({ msg: "Email not found" });
-    // }
+    const { email } = req.body;
+    const admin = await AdminModel.findOne({ email: email });
+    if (!admin) {
+      return res.status(404).json({ msg: "Email not found" });
+    }
 
-    //   // generate otp
-    // const otp = crypto.randomInt(100000, 999999);
+    // generate otp
+    const otp = crypto.randomInt(100000, 999999);
 
-    //  // save otp with expiry
-    // admin.resetOtp = otp;
-    // admin.resetOtpExpires = Date.now() + 10 * 60 * 1000; // valid for 10 mins
-    // await admin.save();
+    // save otp with expiry
+    admin.resetOtp = otp;
+    admin.resetOtpExpires = Date.now() + 10 * 60 * 1000; // valid for 10 mins
+    await admin.save();
+
+    const transporter = nodemailer.createTransport({
+      host: "amikasoftwares.com", // MX record says domain itself
+      port: 587, // try 587 first (TLS)
+      secure: false, // false for 587, true if you switch to 465
+      auth: {
+        user: "mirai@amikasoftwares.com",
+        pass: "Amika@123",
+      },
+      tls: {
+        rejectUnauthorized: false, // allow if server uses self-signed SSL
+      },
+    });
+
+    const mailOptions = {
+      from: "mirai@amikasoftwares.com",
+      to: email,
+      subject: "Your OTP for Password Reset",
+      text: `Your OTP is: ${otp}. Valid for 10 minutes.`,
+    };
+
+    await transporter.sendMail(mailOptions);
 
     return res.status(200).json({
       success: true,
@@ -579,6 +603,48 @@ const verifyAndSendOtp = async (req, res) => {
     });
   } catch (error) {
     console.error("Error sending otp for forget password:", error);
+    return res.status(500).json({ msg: "Server error" });
+  }
+};
+
+const resetPasswordWithOtp = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    console.log(otp);
+    console.log(email);
+
+    // ✅ Find admin by email
+    const admin = await AdminModel.findOne({ email: email });
+    if (!admin) {
+      return res.status(404).json({ msg: "Admin not found" });
+    }
+
+    // ✅ Check OTP
+    if (!admin.resetOtp || !admin.resetOtpExpires) {
+      return res.status(400).json({ msg: "OTP not requested or expired" });
+    }
+
+    if (String(admin.resetOtp) !== String(otp)) {
+      return res.status(400).json({ msg: "Invalid OTP" });
+    }
+
+    if (Date.now() > admin.resetOtpExpires) {
+      return res.status(400).json({ msg: "OTP has expired" });
+    }
+
+    // ✅ Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    admin.password = hashedPassword;
+
+    // ✅ Clear OTP fields
+    admin.resetOtp = undefined;
+    admin.resetOtpExpires = undefined;
+
+    await admin.save();
+
+    return res.status(200).json({ msg: "Password reset successfully" });
+  } catch (error) {
+    console.error("Error resetting password with OTP:", error);
     return res.status(500).json({ msg: "Server error" });
   }
 };
@@ -598,4 +664,5 @@ module.exports = {
   getSystemRightsById,
   changePassword,
   verifyAndSendOtp,
+  resetPasswordWithOtp,
 };

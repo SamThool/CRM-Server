@@ -320,10 +320,109 @@ const updateInvoice = async (req, res) => {
   }
 };
 
+const getMonthlyInvoiceSummary = async (req, res) => {
+  try {
+    const { companyId } = req.query;
+
+    if (!companyId) {
+      return res.status(400).json({ message: "companyId is required" });
+    }
+
+    // ✅ Current month summary (paid/pending/unpaid)
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date(startOfMonth);
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+
+    const invoices = await InvoiceModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+      date: {
+        $gte: startOfMonth,
+        $lt: endOfMonth,
+      },
+    });
+
+    const summary = {
+      paid: 0,
+      pending: 0,
+      unpaid: 0,
+    };
+
+    invoices.forEach((invoice) => {
+      if (invoice.status === "paid") summary.paid++;
+      else if (invoice.status === "pending") summary.pending++;
+      else if (invoice.status === "unpaid") summary.unpaid++;
+    });
+
+    // ✅ Yearly (March → March, 13 months)
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Last March
+    const startYear = currentMonth >= 2 ? currentYear : currentYear - 1;
+    const marchStart = new Date(startYear, 2, 1);
+    marchStart.setHours(0, 0, 0, 0);
+
+    // Upcoming March (exclusive end)
+    const marchEnd = new Date(startYear + 1, 2, 1);
+
+    // Fetch invoices from last March → upcoming March
+    const yearInvoices = await InvoiceModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+      date: { $gte: marchStart, $lt: marchEnd },
+    });
+
+    // Initialize arrays
+    const monthlyTotals = Array(13).fill(0);
+    const monthlyCounts = Array(13).fill(0);
+
+    yearInvoices.forEach((invoice) => {
+      const d = new Date(invoice.date);
+      const diffMonths =
+        (d.getFullYear() - marchStart.getFullYear()) * 12 +
+        (d.getMonth() - marchStart.getMonth());
+
+      if (diffMonths >= 0 && diffMonths < 13) {
+        monthlyTotals[diffMonths] += invoice.totalAmount || 0;
+        monthlyCounts[diffMonths] += 1;
+      }
+    });
+
+    // ✅ Month labels for frontend mapping
+    const monthLabels = [];
+    for (let i = 0; i < 13; i++) {
+      const date = new Date(marchStart);
+      date.setMonth(marchStart.getMonth() + i);
+      monthLabels.push(
+        date.toLocaleString("default", { month: "long", year: "numeric" })
+      );
+    }
+
+    res.status(200).json({
+      message: "Monthly invoice summary fetched successfully",
+      status: true,
+      summary,
+      monthlyTotals, // [March totalAmount, April ..., next March]
+      monthlyCounts, // [March count, April ..., next March]
+      monthLabels, // ["March 2025", "April 2025", ..., "March 2026"]
+    });
+  } catch (error) {
+    console.error("Error fetching monthly invoice summary:", error);
+    res.status(500).json({
+      message: "Error fetching monthly invoice summary",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createInvoice,
   getAllInvoice,
   deleteInvoice,
   getInvoiceById,
   updateInvoice,
+  getMonthlyInvoiceSummary,
 };

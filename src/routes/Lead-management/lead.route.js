@@ -9,6 +9,9 @@ leadRouter.post("/", handleToken, leadController.createLeadController);
 
 // Get all leads
 leadRouter.get("/", handleToken, leadController.getLeadController);
+
+leadRouter.get("/status", handleToken, leadController.getLeadStatusChartData);
+
 leadRouter.get("/:empId", handleToken, leadController.getLeadController);
 
 // ---------- FOLLOW-UP ROUTES (more specific) ----------

@@ -50,4 +50,6 @@ adminRouter.post(
   adminController.changePassword
 );
 
+adminRouter.post("/reset-password", adminController.resetPasswordWithOtp);
+
 module.exports = adminRouter;

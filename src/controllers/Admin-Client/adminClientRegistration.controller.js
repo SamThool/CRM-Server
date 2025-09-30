@@ -35,6 +35,65 @@ const getAllAdminClientRegistration = async (req, res) => {
   }
 };
 
+const getMonthlyClientCounts = async (req, res) => {
+  try {
+    const { companyId } = req.query;
+
+    if (!companyId) {
+      return res.status(400).json({ message: "companyId is required" });
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0=Jan
+
+    // Determine last March
+    const startYear = currentMonth >= 2 ? currentYear : currentYear - 1;
+    const marchStart = new Date(startYear, 2, 1); // March 1, 00:00
+    marchStart.setHours(0, 0, 0, 0);
+
+    // Upcoming March (exclusive end)
+    const marchEnd = new Date(startYear + 1, 2, 1);
+
+    // Fetch all clients created between last March → upcoming March
+    const clients = await AdminClientRegistrationModel.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+      createdAt: { $gte: marchStart, $lt: marchEnd },
+    });
+
+    // Initialize array for 13 months
+    const monthlyCounts = Array(13).fill(0);
+
+    clients.forEach((client) => {
+      const d = new Date(client.createdAt);
+      const diffMonths =
+        (d.getFullYear() - marchStart.getFullYear()) * 12 +
+        (d.getMonth() - marchStart.getMonth());
+      if (diffMonths >= 0 && diffMonths < 13) {
+        monthlyCounts[diffMonths] += 1;
+      }
+    });
+
+    // Month labels
+    const monthLabels = [];
+    for (let i = 0; i < 13; i++) {
+      const date = new Date(marchStart);
+      date.setMonth(marchStart.getMonth() + i);
+      monthLabels.push(
+        date.toLocaleString("default", { month: "long", year: "numeric" })
+      );
+    }
+
+    res.status(200).json({
+      status: true,
+      monthlyCounts, // [March count, April ..., next March]
+      monthLabels, // ["March 2025", "April 2025", ..., "March 2026"]
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const createAdminClientRegistration = async (req, res) => {
   try {
     console.log("📥 Incoming request body:", req.body);
@@ -381,4 +440,5 @@ module.exports = {
   updateAdminClientRegistration,
   deleteAdminClientRegistration,
   getAdminClientRegistrationById,
+  getMonthlyClientCounts,
 };

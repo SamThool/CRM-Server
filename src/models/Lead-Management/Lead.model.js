@@ -43,7 +43,7 @@ const leadSchema = new mongoose.Schema(
     reference: { type: mongoose.Schema.Types.ObjectId, ref: "leadReference" },
     productService: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "ProductOrServiceCategory",
+      ref: "SubProductCategory",
     },
     leadstatus: { type: mongoose.Schema.Types.ObjectId, ref: "leadStatus" },
     leadType: { type: mongoose.Schema.Types.ObjectId, ref: "leadType" },
@@ -57,7 +57,7 @@ const leadSchema = new mongoose.Schema(
     countryCode: { type: String },
     phoneNo: { type: String, required: true },
     altPhoneNo: { type: String },
-    email: { type: String, required: true },
+    email: { type: String },
     altEmail: { type: String },
     notes: { type: String },
     address: { type: String },

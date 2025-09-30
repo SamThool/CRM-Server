@@ -61,20 +61,20 @@ const createLeadController = async (req, res) => {
       // "firstName",
       // "lastName",
       // "gender",
-      "countryCode",
+      // "countryCode",
       "phoneNo",
-      "email",
-      "address",
-      "pincode",
-      "city",
-      "state",
-      "country",
-      "reference",
-      "productService",
-      "leadstatus",
-      "leadType",
-      "assignTo",
-      "projectValue",
+      // "email",
+      // "address",
+      // "pincode",
+      // "city",
+      // "state",
+      // "country",
+      // "reference",
+      // "productService",
+      // "leadstatus",
+      // "leadType",
+      // "assignTo",
+      // "projectValue",
     ];
 
     if (leadCategory === "newLead") {
@@ -181,7 +181,7 @@ const getLeadController = async (req, res) => {
       .populate("Prospect", "companyName")
       .populate("Client")
       .populate("reference", "LeadReference")
-      .populate("productService", "productName")
+      .populate("productService", "subProductName")
       .populate("leadstatus")
       .populate("leadType", "LeadType")
       .populate(
@@ -197,6 +197,94 @@ const getLeadController = async (req, res) => {
   } catch (error) {
     console.error("Get Leads Error:", error);
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const getLeadStatusChartData = async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    const { empId } = req.params;
+
+    if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Valid companyId is required" });
+    }
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const endOfMonth = new Date(startOfMonth);
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+
+    // Base filter
+    let filter = {
+      companyId: new mongoose.Types.ObjectId(companyId),
+      createdAt: {
+        $gte: startOfMonth,
+        $lt: endOfMonth,
+      },
+    };
+
+    // Optional employee filter
+    if (empId && mongoose.Types.ObjectId.isValid(empId)) {
+      filter.assignTo = new mongoose.Types.ObjectId(empId);
+    }
+
+    // Fetch all leads with populated leadstatus
+    const leads = await leadModel
+      .find(filter)
+      .populate("leadstatus")
+      .populate("reference", "LeadReference"); // populate only needed fields
+
+    // Aggregate status counts
+    const statusMap = {};
+    const rstatusMap = {};
+    leads.forEach((lead) => {
+      if (lead.reference) {
+        const { LeadReference, _id } = lead.reference;
+        if (!rstatusMap[_id]) {
+          rstatusMap[_id] = {
+            rname: LeadReference,
+            rcount: 0,
+          };
+        }
+        rstatusMap[_id].rcount += 1;
+      }
+      if (lead.leadstatus) {
+        const { LeadStatus, colorCode, _id } = lead.leadstatus;
+        if (!statusMap[_id]) {
+          statusMap[_id] = {
+            name: LeadStatus,
+            color: colorCode,
+            count: 0,
+          };
+        }
+        statusMap[_id].count += 1;
+      }
+    });
+
+    // Prepare arrays
+    const labels = Object.values(statusMap).map((s) => s.name);
+    const rlabels = Object.values(rstatusMap).map((s) => s.rname);
+    const colors = Object.values(statusMap).map((s) => s.color);
+    const counts = Object.values(statusMap).map((s) => s.count);
+    const rcounts = Object.values(rstatusMap).map((s) => s.rcount);
+
+    console.log("------------------------------------------", statusMap);
+    res.status(200).json({
+      success: true,
+      labels,
+      rlabels,
+      colors,
+      counts,
+      rcounts,
+    });
+  } catch (error) {
+    console.error("Get Lead Status Chart Data Error:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -438,11 +526,11 @@ module.exports = {
   getLeadController,
   updateLeadController,
   deleteLeadController,
-  //:todo follow ups
   createFollowUpController,
   getFollowUpController,
   getFollowUpByLeadIdController,
   updateFollowUpController,
+  getLeadStatusChartData,
   deleteFollowUpController,
   getLeadControllerById,
 };

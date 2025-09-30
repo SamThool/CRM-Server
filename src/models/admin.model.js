@@ -1,45 +1,53 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const adminSchema = new mongoose.Schema({
+const adminSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     email: {
-        type: String,
-        required: true,
-        lowercase: true,
+      type: String,
+      required: true,
+      lowercase: true,
     },
     password: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
-    refId:{
-        type: mongoose.Types.ObjectId,
+    refId: {
+      type: mongoose.Types.ObjectId,
     },
-    refType : {
-        type : String,
+    refType: {
+      type: String,
     },
     role: {
-        type: String,
+      type: String,
     },
     roleId: {
-        type: mongoose.Types.ObjectId,
-        ref: 'Roles'
+      type: mongoose.Types.ObjectId,
+      ref: "Roles",
     },
     isBlocked: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
-
+    resetOtp: {
+      type: String,
+    },
+    resetOtpExpires: {
+      type: Date,
+    },
     deletedAt: {
-        type: Date,
+      type: Date,
     },
-}, {
+  },
+  {
     versionKey: false,
     timestamps: true,
-});
+  }
+);
 
-const AdminModel = mongoose.model('Admin', adminSchema);
+const AdminModel = mongoose.model("Admin", adminSchema);
 
 module.exports = AdminModel;
