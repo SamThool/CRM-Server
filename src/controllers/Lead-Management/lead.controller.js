@@ -271,7 +271,6 @@ const getLeadStatusChartData = async (req, res) => {
     const counts = Object.values(statusMap).map((s) => s.count);
     const rcounts = Object.values(rstatusMap).map((s) => s.rcount);
 
-    console.log("------------------------------------------", statusMap);
     res.status(200).json({
       success: true,
       labels,
@@ -347,8 +346,6 @@ const updateLeadController = async (req, res) => {
       }
     });
 
-    console.log("------------------------------------------", updateData);
-
     // Update only provided fields; $set ensures only changed fields are updated.
     const updatedLead = await leadModel
       .findByIdAndUpdate(
@@ -411,9 +408,6 @@ const deleteLeadController = async (req, res) => {
   }
 };
 
-//todo: FollowUp controllers
-// Create Follow-Up
-// Add a follow-up to a lead
 const createFollowUpController = async (req, res) => {
   const { leadId, followupDate, followupTime, leadstatus, comment } = req.body;
 
@@ -421,9 +415,13 @@ const createFollowUpController = async (req, res) => {
     const lead = await leadModel.findById(leadId);
     if (!lead) return res.status(404).json({ message: "Lead not found" });
 
-    // Always use 'leadstatus' as field name for consistency
+    // create follow-up
     const newFollowUp = { followupDate, followupTime, leadstatus, comment };
     lead.followups.push(newFollowUp);
+
+    // update main lead status too
+    lead.leadstatus = leadstatus;
+
     await lead.save();
 
     res.status(201).json({
