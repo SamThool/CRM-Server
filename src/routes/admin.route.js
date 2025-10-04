@@ -36,11 +36,13 @@ adminRouter.get(
   handleToken,
   adminController.fetchUserSuspensionStatus
 );
+
 adminRouter.post(
   "/update-user-suspension-status",
   handleToken,
   adminController.updateUserSuspensionStatus
 );
+
 adminRouter.get("/user-rights/:id", adminController.getSystemRightsById);
 
 //todo: change password
