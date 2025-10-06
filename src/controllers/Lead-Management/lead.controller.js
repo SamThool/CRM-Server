@@ -220,10 +220,10 @@ const getLeadStatusChartData = async (req, res) => {
     // Base filter
     let filter = {
       companyId: new mongoose.Types.ObjectId(companyId),
-      createdAt: {
-        $gte: startOfMonth,
-        $lt: endOfMonth,
-      },
+      // createdAt: {
+      //   $gte: startOfMonth,
+      //   $lt: endOfMonth,
+      // },
     };
 
     // Optional employee filter
