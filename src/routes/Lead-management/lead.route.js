@@ -4,6 +4,30 @@ const { leadController } = require("../../controllers/index");
 
 const { handleToken } = require("../../utils/handleToken");
 
+leadRouter.post(
+  "/analytics/daily-leads",
+  handleToken,
+  leadController.getDailyLeadsChartData
+);
+
+leadRouter.post(
+  "/analytics/monthly-leads",
+  handleToken,
+  leadController.getMonthlyLeadsChartData
+);
+
+leadRouter.post(
+  "/analytics/product-leads-months",
+  handleToken,
+  leadController.getProductLeadsMonths
+);
+
+leadRouter.post(
+  "/analytics/product-leads",
+  handleToken,
+  leadController.getProductLeads
+);
+
 // Create lead data
 leadRouter.post("/", handleToken, leadController.createLeadController);
 

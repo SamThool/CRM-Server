@@ -6,6 +6,7 @@ const { leadReferenceModel } = require("../../models/index");
 const { ProductOrServiceCategorymodel } = require("../../models/index");
 const { leadStatusModel } = require("../../models/index");
 const { leadTypeModel } = require("../../models/index");
+const moment = require("moment");
 
 const createLeadController = async (req, res) => {
   try {
@@ -519,6 +520,260 @@ const deleteFollowUpController = async (req, res) => {
   }
 };
 
+const getDailyLeadsChartData = async (req, res) => {
+  try {
+    const { month, year } = req.body;
+    const { companyId } = req.query;
+
+    if (!companyId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "companyId is required" });
+    }
+
+    const selectedMonth = month ? parseInt(month) : new Date().getMonth() + 1;
+    const selectedYear = year ? parseInt(year) : new Date().getFullYear();
+
+    const startDate = new Date(selectedYear, selectedMonth - 1, 1);
+    const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59);
+
+    // Convert companyId string to ObjectId
+    const companyObjectId = new mongoose.Types.ObjectId(companyId);
+
+    // Aggregate leads for selected month
+    const leads = await leadModel.aggregate([
+      {
+        $match: {
+          companyId: companyObjectId,
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $dayOfMonth: "$createdAt" },
+          totalLeads: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Prepare chart data with all days in the month
+    const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+    const chartData = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      const record = leads.find((l) => l._id === day);
+      return { day, totalLeads: record ? record.totalLeads : 0 };
+    });
+
+    // Prepare dropdown months (only months with leads for this company)
+    const months = await leadModel.aggregate([
+      { $match: { companyId: companyObjectId } },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$createdAt" },
+            year: { $year: "$createdAt" },
+          },
+        },
+      },
+      { $sort: { "_id.year": -1, "_id.month": -1 } },
+    ]);
+
+    const monthList = months.map((m) => ({
+      label: `${moment()
+        .month(m._id.month - 1)
+        .format("MMMM")} ${m._id.year}`,
+      value: { month: m._id.month, year: m._id.year },
+    }));
+
+    res.status(200).json({ success: true, chartData, months: monthList });
+  } catch (error) {
+    console.error("Error in getDailyLeadsChartData:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getMonthlyLeadsChartData = async (req, res) => {
+  try {
+    const { year } = req.body;
+    const { companyId } = req.query;
+
+    if (!companyId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "companyId is required" });
+    }
+
+    const selectedYear = year ? parseInt(year) : new Date().getFullYear();
+    const startDate = new Date(selectedYear, 0, 1);
+    const endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
+    const companyObjectId = new mongoose.Types.ObjectId(companyId);
+
+    // Aggregate leads for each month of the year
+    const leads = await leadModel.aggregate([
+      {
+        $match: {
+          companyId: companyObjectId,
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: { month: { $month: "$createdAt" } },
+          totalLeads: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.month": 1 } },
+    ]);
+
+    // Prepare chart data for all 12 months
+    const chartData = Array.from({ length: 12 }, (_, i) => {
+      const monthNum = i + 1;
+      const record = leads.find((l) => l._id.month === monthNum);
+      return record ? record.totalLeads : 0;
+    });
+
+    res.status(200).json({
+      success: true,
+      chartData,
+    });
+  } catch (error) {
+    console.error("Error in getMonthlyLeadsChartData:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getProductLeadsMonths = async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "companyId is required" });
+    }
+
+    const companyObjectId = new mongoose.Types.ObjectId(companyId);
+
+    const months = await leadModel.aggregate([
+      { $match: { companyId: companyObjectId } },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$createdAt" },
+            year: { $year: "$createdAt" },
+          },
+        },
+      },
+      { $sort: { "_id.year": -1, "_id.month": -1 } },
+    ]);
+
+    const monthList = months.map((m) => ({
+      label: `${moment()
+        .month(m._id.month - 1)
+        .format("MMMM")} ${m._id.year}`,
+      value: { month: m._id.month, year: m._id.year },
+    }));
+
+    res.status(200).json({ success: true, months: monthList });
+  } catch (error) {
+    console.error("Error in getProductLeadsMonths:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getProductLeads = async (req, res) => {
+  try {
+    console.log("Request body:", req.body);
+    console.log("Query params:", req.query);
+
+    const { month, year } = req.body;
+    const { companyId } = req.query;
+
+    if (!companyId) {
+      console.error("companyId is missing");
+      return res
+        .status(400)
+        .json({ success: false, message: "companyId is required" });
+    }
+
+    const selectedMonth = month ? parseInt(month) : new Date().getMonth() + 1;
+    const selectedYear = year ? parseInt(year) : new Date().getFullYear();
+    console.log(
+      "Selected Month:",
+      selectedMonth,
+      "Selected Year:",
+      selectedYear
+    );
+
+    const companyObjectId = new mongoose.Types.ObjectId(companyId);
+    console.log("Company ObjectId:", companyObjectId);
+
+    const startDate = new Date(selectedYear, selectedMonth - 1, 1);
+    const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59);
+    console.log("Start Date:", startDate, "End Date:", endDate);
+
+    // Aggregate leads with productService populated
+    const leads = await leadModel.aggregate([
+      {
+        $match: {
+          companyId: companyObjectId,
+          createdAt: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $lookup: {
+          from: "subproductcategories", // collection name for SubProductCategory
+          localField: "productService",
+          foreignField: "_id",
+          as: "productServiceData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$productServiceData",
+          preserveNullAndEmptyArrays: false, // only include leads with productService
+        },
+      },
+      {
+        $group: {
+          _id: "$productServiceData.subProductName",
+          totalLeads: { $sum: 1 },
+        },
+      },
+      { $sort: { totalLeads: -1 } },
+    ]);
+
+    console.log("Aggregated leads:", leads);
+
+    // Sample leads for debugging
+    const sampleLeads = await leadModel
+      .find({
+        companyId: companyObjectId,
+        createdAt: { $gte: startDate, $lte: endDate },
+      })
+      .populate("productService", "subProductName");
+
+    console.log("Sample leads with productService:", sampleLeads);
+
+    const subProducts = leads.map((l) => l._id);
+    const leadsCount = leads.map((l) => l.totalLeads);
+    console.log("SubProducts:", subProducts);
+    console.log("LeadsCount:", leadsCount);
+
+    const monthLabel = `${moment()
+      .month(selectedMonth - 1)
+      .format("MMMM")} ${selectedYear}`;
+    console.log("Month Label:", monthLabel);
+
+    res
+      .status(200)
+      .json({ success: true, monthLabel, subProducts, leadsCount });
+  } catch (error) {
+    console.error("Error in getProductLeads:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createLeadController,
   getLeadController,
@@ -531,4 +786,8 @@ module.exports = {
   getLeadStatusChartData,
   deleteFollowUpController,
   getLeadControllerById,
+  getDailyLeadsChartData,
+  getMonthlyLeadsChartData,
+  getProductLeads,
+  getProductLeadsMonths,
 };
